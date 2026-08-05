@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "800131453874",
+    "project_id": "finance-app-8dc45",
+    "storage_bucket": "finance-app-8dc45.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:800131453874:android:a114e3ab607e7e46d58aab",
+        "android_client_info": {
+          "package_name": "com.example.finance_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "800131453874-5og4oqopksk2gn1frejhn0fkj4uv1u8o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAA_m-S7pyCm-6KMJOxzIHwDtfRyrDuYbU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "800131453874-5og4oqopksk2gn1frejhn0fkj4uv1u8o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:800131453874:android:2a09e07d127c0d46d58aab",
+        "android_client_info": {
+          "package_name": "com.khanstudio.finance_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "800131453874-5og4oqopksk2gn1frejhn0fkj4uv1u8o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAA_m-S7pyCm-6KMJOxzIHwDtfRyrDuYbU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "800131453874-5og4oqopksk2gn1frejhn0fkj4uv1u8o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
