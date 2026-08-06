@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/transaction_model.dart';
 
+enum TimeFilter { week, month, year }
+
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
 
@@ -14,6 +16,8 @@ class AnalyticsScreen extends StatefulWidget {
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   final _firestore = FirebaseFirestore.instance;
+  TimeFilter _selectedFilter = TimeFilter.week;
+
   String? get _userId => FirebaseAuth.instance.currentUser?.uid;
 
   String _formatMoney(double value) {
@@ -21,273 +25,343 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return formatter.format(value).replaceAll(',', ' ');
   }
 
+  DateTimeRange _getFilterRange() {
+    final now = DateTime.now();
+    switch (_selectedFilter) {
+      case TimeFilter.week:
+        return DateTimeRange(
+          start: DateTime(now.year, now.month, now.day - 6),
+          end: DateTime(now.year, now.month, now.day, 23, 59, 59),
+        );
+      case TimeFilter.month:
+        return DateTimeRange(
+          start: DateTime(now.year, now.month, 1),
+          end: DateTime(now.year, now.month + 1, 0, 23, 59, 59),
+        );
+      case TimeFilter.year:
+        return DateTimeRange(
+          start: DateTime(now.year, 1, 1),
+          end: DateTime(now.year, 12, 31, 23, 59, 59),
+        );
+    }
+  }
+
+  final List<Color> _chartColors = const [
+    Color(0xFF6C63FF),
+    Color(0xFF34C471),
+    Color(0xFF4A90E2),
+    Color(0xFFFFA726),
+    Color(0xFFE05B49),
+    Color(0xFFAB47BC),
+    Color(0xFF26C6DA),
+  ];
+
   @override
   Widget build(BuildContext context) {
     if (_userId == null) {
       return const Center(child: Text('Кіру қажет'));
     }
 
-    final now = DateTime.now();
-    final weekStart = DateTime(now.year, now.month, now.day - 6);
-    final weekEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
+    final range = _getFilterRange();
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: _firestore
-          .collection('transactions')
-          .where('userId', isEqualTo: _userId)
-          .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(weekStart))
-          .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(weekEnd))
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text('Қате: ${snapshot.error}'));
-        }
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FE),
+      body: SafeArea(
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _firestore
+              .collection('transactions')
+              .where('userId', isEqualTo: _userId)
+              .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(range.start))
+              .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(range.end))
+              .orderBy('createdAt', descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('Қате: ${snapshot.error}'));
+            }
 
-        final transactions = snapshot.data?.docs
+            final transactions = snapshot.data?.docs
                 .map((doc) => TransactionModel.fromDoc(doc))
                 .toList() ??
-            [];
+                [];
 
-        final totalIncome = transactions
-            .where((t) => t.type == TransactionType.income)
-            .fold(0.0, (total, t) => total + t.amount);
+            final totalIncome = transactions
+                .where((t) => t.type == TransactionType.income)
+                .fold(0.0, (total, t) => total + t.amount);
 
-        final totalExpense = transactions
-            .where((t) => t.type == TransactionType.expense)
-            .fold(0.0, (total, t) => total + t.amount);
+            final totalExpense = transactions
+                .where((t) => t.type == TransactionType.expense)
+                .fold(0.0, (total, t) => total + t.amount);
 
-        final categoryExpenses = <String, double>{};
-        for (final t in transactions) {
-          if (t.type == TransactionType.expense) {
-            final cat = t.category.trim().isEmpty ? 'Басқа' : t.category;
-            categoryExpenses[cat] = (categoryExpenses[cat] ?? 0) + t.amount;
-          }
-        }
-
-        final dailyData = <DateTime, double>{};
-        for (int i = 6; i >= 0; i--) {
-          final day = DateTime(now.year, now.month, now.day - i);
-          dailyData[DateTime(day.year, day.month, day.day)] = 0.0;
-        }
-        for (final t in transactions) {
-          final day = DateTime(t.date.year, t.date.month, t.date.day);
-          if (dailyData.containsKey(day)) {
-            if (t.type == TransactionType.income) {
-              dailyData[day] = (dailyData[day] ?? 0) + t.amount;
-            } else {
-              dailyData[day] = (dailyData[day] ?? 0) - t.amount;
+            final categoryExpenses = <String, double>{};
+            for (final t in transactions) {
+              if (t.type == TransactionType.expense) {
+                final cat = t.category.trim().isEmpty ? 'Басқа' : t.category;
+                categoryExpenses[cat] = (categoryExpenses[cat] ?? 0) + t.amount;
+              }
             }
-          }
-        }
 
-        return ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            Text(
-              'Аналитика',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Соңғы 7 күн',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
-            ),
-            const SizedBox(height: 24),
+            final dailyData = <DateTime, double>{};
+            if (_selectedFilter == TimeFilter.week) {
+              for (int i = 6; i >= 0; i--) {
+                final day = DateTime(range.end.year, range.end.month, range.end.day - i);
+                dailyData[DateTime(day.year, day.month, day.day)] = 0.0;
+              }
+              for (final t in transactions) {
+                final day = DateTime(t.date.year, t.date.month, t.date.day);
+                if (dailyData.containsKey(day)) {
+                  if (t.type == TransactionType.income) {
+                    dailyData[day] = (dailyData[day] ?? 0) + t.amount;
+                  } else {
+                    dailyData[day] = (dailyData[day] ?? 0) - t.amount;
+                  }
+                }
+              }
+            }
 
-            if (transactions.isEmpty)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 48),
-                  child: Column(
-                    children: [
-                      Icon(Icons.pie_chart_outline,
-                          size: 48, color: Colors.grey.shade300),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Әзірге деректер жоқ',
-                        style: TextStyle(color: Colors.grey.shade500),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else ...[
-              _SummaryRow(
-                income: totalIncome,
-                expense: totalExpense,
-                formatMoney: _formatMoney,
-              ),
-              const SizedBox(height: 28),
-
-              Text(
-                'Шығындар санаты бойынша',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 220,
-                child: PieChart(
-                  PieChartData(
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 50,
-                    sections: _buildPieSections(categoryExpenses, totalExpense),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 12,
-                runSpacing: 8,
-                children: _buildLegend(categoryExpenses),
-              ),
-              const SizedBox(height: 28),
-
-              Text(
-                'Күнделікті баланс',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 220,
-                child: BarChart(
-                  BarChartData(
-                    alignment: BarChartAlignment.spaceAround,
-                    maxY: _getMaxBarValue(dailyData.values.toList()),
-                    minY: _getMinBarValue(dailyData.values.toList()),
-                    barTouchData: BarTouchData(
-                      enabled: true,
-                      touchTooltipData: BarTouchTooltipData(
-                        getTooltipColor: (group) => Colors.grey.shade800,
-                        getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                          final value = rod.toY;
-                          final sign = value >= 0 ? '+' : '';
-                          return BarTooltipItem(
-                            '$sign${_formatMoney(value.abs())} ₸',
-                            const TextStyle(color: Colors.white, fontSize: 12),
-                          );
-                        },
+            return ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Аналитика',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1E293B),
                       ),
                     ),
-                    titlesData: FlTitlesData(
-                      show: true,
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 40,
-                          getTitlesWidget: (value, meta) {
-                            if (value == 0) return const Text('0');
-                            final abs = value.abs();
-                            if (abs >= 1000) {
-                              return Text('${(abs / 1000).toStringAsFixed(0)}к');
-                            }
-                            return Text(abs.toStringAsFixed(0));
-                          },
+                    _buildFilterSegment(),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                _SummaryRow(
+                  income: totalIncome,
+                  expense: totalExpense,
+                  formatMoney: _formatMoney,
+                ),
+                const SizedBox(height: 24),
+
+                if (transactions.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 48),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(Icons.pie_chart_outline,
+                            size: 56, color: Colors.grey.shade300),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Тандалған уақыт аралығында деректер жоқ',
+                          style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
                         ),
+                      ],
+                    ),
+                  )
+                else ...[
+                  // Оқшауланған интерактивті диаграмма виджеті
+                  _InteractiveCategoryExpenses(
+                    categoryExpenses: categoryExpenses,
+                    totalExpense: totalExpense,
+                    chartColors: _chartColors,
+                    formatMoney: _formatMoney,
+                  ),
+
+                  if (_selectedFilter == TimeFilter.week) ...[
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 28,
-                          getTitlesWidget: (value, meta) {
-                            final index = value.toInt();
-                            if (index < 0 || index >= dailyData.length) return const Text('');
-                            final date = dailyData.keys.elementAt(index);
-                            final label = '${date.day}.${date.month}';
-                            return Text(label, style: const TextStyle(fontSize: 11));
-                          },
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Күнделікті Баланс Динамикасы',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            height: 200,
+                            child: BarChart(
+                              BarChartData(
+                                alignment: BarChartAlignment.spaceAround,
+                                maxY: _getMaxBarValue(dailyData.values.toList()),
+                                minY: _getMinBarValue(dailyData.values.toList()),
+                                barTouchData: BarTouchData(
+                                  enabled: true,
+                                  touchTooltipData: BarTouchTooltipData(
+                                    getTooltipColor: (group) =>
+                                    const Color(0xFF1E293B),
+                                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                                      final value = rod.toY;
+                                      final sign = value >= 0 ? '+' : '';
+                                      return BarTooltipItem(
+                                        '$sign${_formatMoney(value.abs())} ₸',
+                                        const TextStyle(
+                                            color: Colors.white, fontSize: 12),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                titlesData: FlTitlesData(
+                                  show: true,
+                                  topTitles: const AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false)),
+                                  rightTitles: const AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false)),
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 36,
+                                      getTitlesWidget: (value, meta) {
+                                        if (value == 0) {
+                                          return const Text('0',
+                                              style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Colors.grey));
+                                        }
+                                        final abs = value.abs();
+                                        if (abs >= 1000) {
+                                          return Text(
+                                            '${(abs / 1000).toStringAsFixed(0)}к',
+                                            style: const TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.grey),
+                                          );
+                                        }
+                                        return Text(
+                                          abs.toStringAsFixed(0),
+                                          style: const TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 28,
+                                      getTitlesWidget: (value, meta) {
+                                        final index = value.toInt();
+                                        if (index < 0 || index >= dailyData.length) {
+                                          return const Text('');
+                                        }
+                                        final date = dailyData.keys.elementAt(index);
+                                        final label = '${date.day}.${date.month}';
+                                        return Text(label,
+                                            style: const TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey));
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                borderData: FlBorderData(show: false),
+                                gridData: FlGridData(
+                                  show: true,
+                                  drawVerticalLine: false,
+                                  horizontalInterval: 5000,
+                                  getDrawingHorizontalLine: (value) => FlLine(
+                                    color: Colors.grey.shade100,
+                                    strokeWidth: 1,
+                                  ),
+                                ),
+                                barGroups: _buildBarGroups(dailyData),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    borderData: FlBorderData(show: false),
-                    barGroups: _buildBarGroups(dailyData),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        );
-      },
+                  ],
+                ],
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 
-  List<PieChartSectionData> _buildPieSections(
-      Map<String, double> categoryExpenses, double total) {
-    if (total <= 0) return [];
-
-    final colors = [
-      const Color(0xFF6C63FF),
-      const Color(0xFF34C471),
-      const Color(0xFF4A90E2),
-      const Color(0xFFE0A83E),
-      const Color(0xFFE05B49),
-      const Color(0xFF9C27B0),
-      const Color(0xFF00BCD4),
-    ];
-
-    final entries = categoryExpenses.entries.toList();
-    return entries.asMap().entries.map((entry) {
-      final index = entry.key;
-      final mapEntry = entry.value;
-      final value = mapEntry.value;
-      final percent = value / total;
-      final color = colors[index % colors.length];
-      return PieChartSectionData(
-        color: color,
-        value: value,
-        title: '${(percent * 100).toStringAsFixed(0)}%',
-        radius: 60,
-        titleStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      );
-    }).toList();
-  }
-
-  List<Widget> _buildLegend(Map<String, double> categoryExpenses) {
-    final colors = [
-      const Color(0xFF6C63FF),
-      const Color(0xFF34C471),
-      const Color(0xFF4A90E2),
-      const Color(0xFFE0A83E),
-      const Color(0xFFE05B49),
-      const Color(0xFF9C27B0),
-      const Color(0xFF00BCD4),
-    ];
-    final entries = categoryExpenses.entries.toList();
-    return entries.asMap().entries.map((entry) {
-      final index = entry.key;
-      final mapEntry = entry.value;
-      final color = colors[index % colors.length];
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            mapEntry.key,
-            style: const TextStyle(fontSize: 12),
-          ),
-        ],
-      );
-    }).toList();
+  Widget _buildFilterSegment() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: TimeFilter.values.map((filter) {
+          final isSelected = _selectedFilter == filter;
+          String label;
+          switch (filter) {
+            case TimeFilter.week:
+              label = 'Апта';
+              break;
+            case TimeFilter.month:
+              label = 'Ай';
+              break;
+            case TimeFilter.year:
+              label = 'Жыл';
+              break;
+          }
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedFilter = filter;
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.white : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: isSelected
+                    ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                  ),
+                ]
+                    : [],
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected ? const Color(0xFF1E293B) : Colors.grey.shade600,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   double _getMaxBarValue(List<double> values) {
@@ -312,16 +386,192 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       final index = entry.key;
       final value = entry.value.value;
       final isPositive = value >= 0;
+
       return BarChartGroupData(
         x: index,
         barRods: [
           BarChartRodData(
             toY: value.abs(),
             color: isPositive ? const Color(0xFF34C471) : const Color(0xFFE05B49),
-            width: 18,
-            borderRadius: BorderRadius.circular(6),
+            width: 14,
+            borderRadius: BorderRadius.circular(4),
           ),
         ],
+      );
+    }).toList();
+  }
+}
+
+// -----------------------------------------------------------------------------
+// ТҮЗЕТІЛГЕН ЖЕКЕ ДИАГРАММА ВИДЖЕТІ (Жыпылықтауды болдырмайды)
+// -----------------------------------------------------------------------------
+class _InteractiveCategoryExpenses extends StatefulWidget {
+  final Map<String, double> categoryExpenses;
+  final double totalExpense;
+  final List<Color> chartColors;
+  final String Function(double) formatMoney;
+
+  const _InteractiveCategoryExpenses({
+    required this.categoryExpenses,
+    required this.totalExpense,
+    required this.chartColors,
+    required this.formatMoney,
+  });
+
+  @override
+  State<_InteractiveCategoryExpenses> createState() => _InteractiveCategoryExpensesState();
+}
+
+class _InteractiveCategoryExpensesState extends State<_InteractiveCategoryExpenses> {
+  int _touchedPieIndex = -1;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = widget.categoryExpenses.entries.toList();
+    entries.sort((a, b) => b.value.compareTo(a.value));
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Шығындар санаты бойынша',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 200,
+            child: PieChart(
+              PieChartData(
+                pieTouchData: PieTouchData(
+                  touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                    if (!event.isInterestedForInteractions ||
+                        pieTouchResponse == null ||
+                        pieTouchResponse.touchedSection == null) {
+                      if (_touchedPieIndex != -1) {
+                        setState(() {
+                          _touchedPieIndex = -1;
+                        });
+                      }
+                      return;
+                    }
+
+                    final newIndex =
+                        pieTouchResponse.touchedSection!.touchedSectionIndex;
+
+                    if (_touchedPieIndex != newIndex) {
+                      setState(() {
+                        _touchedPieIndex = newIndex;
+                      });
+                    }
+                  },
+                ),
+                sectionsSpace: 3,
+                centerSpaceRadius: 50,
+                sections: _buildSections(entries),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 12),
+          ..._buildCategoryList(entries),
+        ],
+      ),
+    );
+  }
+
+  List<PieChartSectionData> _buildSections(List<MapEntry<String, double>> entries) {
+    if (widget.totalExpense <= 0) return [];
+
+    return entries.asMap().entries.map((entry) {
+      final index = entry.key;
+      final value = entry.value.value;
+      final isTouched = index == _touchedPieIndex;
+      // Радиус айырмашылығын 48/45 қылып жұмсарттық (секірісті болдырмау үшін)
+      final radius = isTouched ? 48.0 : 45.0;
+      final color = widget.chartColors[index % widget.chartColors.length];
+
+      return PieChartSectionData(
+        color: color,
+        value: value,
+        showTitle: false,
+        radius: radius,
+      );
+    }).toList();
+  }
+
+  List<Widget> _buildCategoryList(List<MapEntry<String, double>> entries) {
+    return entries.asMap().entries.map((entry) {
+      final index = entry.key;
+      final mapEntry = entry.value;
+      final percent =
+      widget.totalExpense > 0 ? (mapEntry.value / widget.totalExpense) : 0.0;
+      final color = widget.chartColors[index % widget.chartColors.length];
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12.0),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration:
+                      BoxDecoration(color: color, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      mapEntry.key,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  '${widget.formatMoney(mapEntry.value)} ₸ (${(percent * 100).toStringAsFixed(1)}%)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: percent,
+                backgroundColor: Colors.grey.shade100,
+                color: color,
+                minHeight: 6,
+              ),
+            ),
+          ],
+        ),
       );
     }).toList();
   }
@@ -344,28 +594,50 @@ class _SummaryRow extends StatelessWidget {
       children: [
         Expanded(
           child: Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F8EF),
-              borderRadius: BorderRadius.circular(18),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.north_east, color: const Color(0xFF34C471), size: 18),
-                    const SizedBox(width: 6),
-                    Text('Табыс', style: TextStyle(color: Colors.grey.shade700)),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF34C471).withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.north_east,
+                          color: Color(0xFF34C471), size: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Табыс',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Text(
                   '+${formatMoney(income)} ₸',
                   style: const TextStyle(
                     color: Color(0xFF34C471),
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: 17,
                   ),
                 ),
               ],
@@ -375,28 +647,50 @@ class _SummaryRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFFCEAE7),
-              borderRadius: BorderRadius.circular(18),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.south_east, color: const Color(0xFFE05B49), size: 18),
-                    const SizedBox(width: 6),
-                    Text('Шығын', style: TextStyle(color: Colors.grey.shade700)),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE05B49).withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.south_east,
+                          color: Color(0xFFE05B49), size: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Шығын',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Text(
                   '-${formatMoney(expense)} ₸',
                   style: const TextStyle(
                     color: Color(0xFFE05B49),
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: 17,
                   ),
                 ),
               ],

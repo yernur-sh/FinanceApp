@@ -45,14 +45,9 @@ class _HomeScreenState extends State<HomeScreen> {
     await _firestore.collection('transactions').doc(id).delete();
   }
 
-  Future<void> _addTransactionToFirestore(TransactionModel t) async {
-    if (_userId == null) return;
-    await _firestore.collection('transactions').add(t.toMap(_userId!));
-  }
-
-  void _addTransaction() {
+  void _addTransaction({TransactionType initialType = TransactionType.expense}) {
     final amountController = TextEditingController();
-    TransactionType selectedType = TransactionType.expense;
+    TransactionType selectedType = initialType;
     String? selectedGoalId;
     String? selectedBudgetCategory;
 
@@ -116,7 +111,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
 
-                    // Шығын болғанда ғана бюджет санатын таңдау опциясы көрінеді
                     if (selectedType == TransactionType.expense) ...[
                       const SizedBox(height: 16),
                       Text(
@@ -186,7 +180,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 6),
                     ],
 
-                    // Шығын болғанда ғана мақсат таңдау опциясы көрінеді
                     if (selectedType == TransactionType.expense) ...[
                       const SizedBox(height: 16),
                       Text(
@@ -281,7 +274,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         Navigator.pop(context);
 
-                        // Транзакция мен мақсатты бір batch-та сақтаймыз
                         final batch = _firestore.batch();
                         final transRef = _firestore.collection('transactions').doc();
                         batch.set(transRef, newTransaction.toMap(_userId!));
@@ -324,7 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: const Color(0xFFF8F9FE),
       body: SafeArea(child: pages[_selectedIndex]),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
@@ -372,17 +364,19 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 20),
+
+            // Баланс карточкасы
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
@@ -391,70 +385,62 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Text(
                     'Жалпы баланс',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '${_formatMoney(balance)} ₸',
                     style: const TextStyle(
                       fontSize: 34,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF34C471),
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1E293B),
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
+
+            // Жеке-жеке батырмалар карточкалары
             Row(
               children: [
+                // Толықтыру карточкасы
                 Expanded(
-                  child: _SummaryCard(
-                    icon: Icons.north_east,
-                    label: 'Табыс',
-                    amount: '+${_formatMoney(income)} ₸',
-                    color: const Color(0xFF34C471),
-                    bgColor: const Color(0xFFE8F8EF),
+                  child: _ActionButtonCard(
+                    title: 'Толықтыру',
+                    icon: Icons.arrow_upward_rounded,
+                    accentColor: const Color(0xFF34C471),
+                    onTap: () => _addTransaction(initialType: TransactionType.income),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
+                // Жұмсау карточкасы
                 Expanded(
-                  child: _SummaryCard(
-                    icon: Icons.south_east,
-                    label: 'Шығын',
-                    amount: '-${_formatMoney(expense)} ₸',
-                    color: const Color(0xFFE05B49),
-                    bgColor: const Color(0xFFFCEAE7),
+                  child: _ActionButtonCard(
+                    title: 'Жұмсау',
+                    icon: Icons.arrow_downward_rounded,
+                    accentColor: const Color(0xFFE05B49),
+                    onTap: () => _addTransaction(initialType: TransactionType.expense),
                   ),
                 ),
               ],
             ),
+
             const SizedBox(height: 28),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Соңғы транзакциялар',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                InkWell(
-                  onTap: _addTransaction,
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6C63FF),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white),
-                  ),
-                ),
-              ],
+
+            // Соңғы транзакциялар тақырыбы
+            Text(
+              'Соңғы транзакциялар',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 16),
+
             if (transactions.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32),
@@ -478,49 +464,67 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
+// Жеке батырма карточкасына арналған компонент
+class _ActionButtonCard extends StatelessWidget {
+  final String title;
   final IconData icon;
-  final String label;
-  final String amount;
-  final Color color;
-  final Color bgColor;
+  final Color accentColor;
+  final VoidCallback onTap;
 
-  const _SummaryCard({
+  const _ActionButtonCard({
+    required this.title,
     required this.icon,
-    required this.label,
-    required this.amount,
-    required this.color,
-    required this.bgColor,
+    required this.accentColor,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 18),
-              const SizedBox(width: 6),
-              Text(label, style: TextStyle(color: Colors.grey.shade700)),
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            amount,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: accentColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -551,7 +555,7 @@ class _TransactionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -594,21 +598,6 @@ class _TransactionTile extends StatelessWidget {
             onPressed: onDelete,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _PlaceholderTab extends StatelessWidget {
-  final String title;
-  const _PlaceholderTab({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        '$title — жақында қосылады',
-        style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
       ),
     );
   }
