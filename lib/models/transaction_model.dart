@@ -9,6 +9,7 @@ class TransactionModel {
   final double amount;
   final TransactionType type;
   final DateTime date;
+  final String? goalId;
 
   TransactionModel({
     required this.id,
@@ -17,6 +18,7 @@ class TransactionModel {
     required this.amount,
     required this.type,
     required this.date,
+    this.goalId,
   });
 
   Map<String, dynamic> toMap(String userId) {
@@ -27,6 +29,7 @@ class TransactionModel {
       'amount': amount,
       'type': type == TransactionType.income ? 'income' : 'expense',
       'createdAt': Timestamp.fromDate(date),
+      'goalId': goalId,
     };
   }
 
@@ -41,6 +44,7 @@ class TransactionModel {
           ? TransactionType.income
           : TransactionType.expense,
       date: (data['createdAt'] as Timestamp).toDate(),
+      goalId: data['goalId'] as String?,
     );
   }
 }

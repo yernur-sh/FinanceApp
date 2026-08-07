@@ -41,11 +41,26 @@ class _HomeScreenState extends State<HomeScreen> {
         snap.docs.map((doc) => TransactionModel.fromDoc(doc)).toList());
   }
 
-  Future<void> _deleteTransaction(String id) async {
-    await _firestore.collection('transactions').doc(id).delete();
+  Future<void> _deleteTransaction(TransactionModel transaction) async {
+    final batch = _firestore.batch();
+    final transRef =
+    _firestore.collection('transactions').doc(transaction.id);
+    batch.delete(transRef);
+
+    // Егер транзакция мақсатпен байланысты болса, мақсаттың жиналған
+    // сомасынан сол мөлшерді кері азайтамыз
+    if (transaction.goalId != null) {
+      final goalRef = _firestore.collection('goals').doc(transaction.goalId);
+      batch.update(goalRef, {
+        'currentAmount': FieldValue.increment(-transaction.amount),
+      });
+    }
+
+    await batch.commit();
   }
 
   void _addTransaction({TransactionType initialType = TransactionType.expense}) {
+    final titleController = TextEditingController(); // Табыс атауы үшін
     final amountController = TextEditingController();
     TransactionType selectedType = initialType;
     String? selectedGoalId;
@@ -74,8 +89,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Жаңа транзакция',
-                        style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      'Жаңа транзакция',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     const SizedBox(height: 16),
                     SegmentedButton<TransactionType>(
                       segments: const [
@@ -102,6 +119,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
+
+                    // --- ТАБЫС ТАҢДАЛҒАНДА ШЫҒАТЫН АТАУ ӨРІСІ ---
+                    if (selectedType == TransactionType.income) ...[
+                      TextField(
+                        controller: titleController,
+                        decoration: const InputDecoration(
+                          labelText: 'Табыс атауы (мыс. Жалақы, Премия)',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // --- СОМА ӨРІСІ ---
                     TextField(
                       controller: amountController,
                       keyboardType: TextInputType.number,
@@ -111,6 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
 
+                    // --- ШЫҒЫН ТАҢДАЛҒАНДА БЮДЖЕТ САНАТТАРЫ ---
                     if (selectedType == TransactionType.expense) ...[
                       const SizedBox(height: 16),
                       Text(
@@ -180,6 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 6),
                     ],
 
+                    // --- ШЫҒЫН ТАҢДАЛҒАНДА МАҚСАТТАР ТІЗІМІ ---
                     if (selectedType == TransactionType.expense) ...[
                       const SizedBox(height: 16),
                       Text(
@@ -261,21 +294,53 @@ class _HomeScreenState extends State<HomeScreen> {
                         if (_userId == null) return;
 
                         final isExpense = selectedType == TransactionType.expense;
+                        final enteredTitle = titleController.text.trim();
+
+                        String finalTitle = 'Шығын';
+                        String finalCategory = '-';
+
+                        if (!isExpense) {
+                          // Табыс болса
+                          finalTitle = enteredTitle.isNotEmpty ? enteredTitle : 'Табыс';
+                          finalCategory = 'Табыс';
+                        } else {
+                          // Шығын болса
+                          if (selectedGoalId != null) {
+                            // Мақсат таңдалса — Firestore-дан сол мақсаттың атын тартып аламыз
+                            final goalDoc = await _firestore
+                                .collection('goals')
+                                .doc(selectedGoalId)
+                                .get();
+                            if (goalDoc.exists) {
+                              finalTitle = goalDoc.get('title') ?? 'Мақсат';
+                              finalCategory = goalDoc.get('title') ?? 'Мақсат';
+                            }
+                          } else if (selectedBudgetCategory != null) {
+                            // Бюджет санаты таңдалса
+                            finalTitle = selectedBudgetCategory!;
+                            finalCategory = selectedBudgetCategory!;
+                          } else {
+                            // Ештеңе таңдалмаса
+                            finalTitle = 'Шығын';
+                            finalCategory = 'Шығын';
+                          }
+                        }
+
                         final newTransaction = TransactionModel(
                           id: '',
-                          title: isExpense
-                              ? (selectedBudgetCategory ?? 'Шығын')
-                              : 'Табыс',
-                          category: selectedBudgetCategory ?? '-',
+                          title: finalTitle,
+                          category: finalCategory,
                           amount: amount,
                           type: selectedType,
                           date: DateTime.now(),
+                          goalId: selectedGoalId,
                         );
 
-                        Navigator.pop(context);
+                        if (context.mounted) Navigator.pop(context);
 
                         final batch = _firestore.batch();
-                        final transRef = _firestore.collection('transactions').doc();
+                        final transRef =
+                        _firestore.collection('transactions').doc();
                         batch.set(transRef, newTransaction.toMap(_userId!));
 
                         if (selectedGoalId != null) {
@@ -455,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ...transactions.map((t) => _TransactionTile(
                 transaction: t,
                 formatMoney: _formatMoney,
-                onDelete: () => _deleteTransaction(t.id),
+                onDelete: () => _deleteTransaction(t),
               )),
           ],
         );

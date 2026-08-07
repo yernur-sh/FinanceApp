@@ -21,8 +21,30 @@ class _BudgetScreenState extends State<BudgetScreen> {
     return formatter.format(value).replaceAll(',', ' ');
   }
 
-  Future<void> _deleteBudget(String id) async {
-    await _firestore.collection('budgets').doc(id).delete();
+  /// 🔹 БҮДЖЕТТІ ЖӘНЕ ОҒАН ҚАТЫСТЫ БАРЛЫҚ ТРАНЗАКЦИЯЛАРДЫ БІРГЕ ӨШІРУ
+  Future<void> _deleteBudgetCascade(String budgetId, String categoryName) async {
+    if (_userId == null) return;
+
+    final batch = _firestore.batch();
+
+    // 1. Бюджет құжатын өшіруге дайындаймыз
+    final budgetRef = _firestore.collection('budgets').doc(budgetId);
+    batch.delete(budgetRef);
+
+    // 2. Осы санатқа жататын пайдаланушының транзакцияларын табамыз
+    final transactionsQuery = await _firestore
+        .collection('transactions')
+        .where('userId', isEqualTo: _userId)
+        .where('category', isEqualTo: categoryName)
+        .get();
+
+    // 3. Табылған транзакциялардың барлығын өшіруге қосамыз
+    for (var doc in transactionsQuery.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // 4. Барлық транзакция мен бюджетті бірге өшіреміз (Atomic operation)
+    await batch.commit();
   }
 
   Future<void> _addBudget() async {
@@ -59,7 +81,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   TextField(
                     controller: categoryController,
                     decoration: const InputDecoration(
-                      labelText: 'Санат (мыс. Көлік, Жалақы)',
+                      labelText: 'Санат (мыс. Көлік, Тамақ)',
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -121,6 +143,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
     );
   }
 
+  /// 🔹 Санат бойынша ағымдағы айдың шығындарын есептеу
   Future<double> _getSpentForCategory(
       String category,
       int month,
@@ -131,19 +154,32 @@ class _BudgetScreenState extends State<BudgetScreen> {
     final start = DateTime(year, month, 1);
     final end = DateTime(year, month + 1, 1);
 
+    // Сұраныста қате болмауы үшін транзакцияларды сүзіп алып, датасын ішінде тексереміз
     final snapshot = await _firestore
         .collection('transactions')
         .where('userId', isEqualTo: _userId)
         .where('category', isEqualTo: category)
-        .where('type', isEqualTo: 'expense')
-        .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
-        .where('createdAt', isLessThan: Timestamp.fromDate(end))
         .get();
 
     double total = 0.0;
 
     for (final doc in snapshot.docs) {
-      total += doc.get('amount');
+      final data = doc.data();
+      // 'type' тек 'expense' (шығын) болса және осы айда жасалса ғана есептейміз
+      final type = data['type']?.toString();
+      final createdAtTimestamp = data['createdAt'] as Timestamp?;
+
+      if (type == 'expense' || type == 'TransactionType.expense') {
+        if (createdAtTimestamp != null) {
+          final date = createdAtTimestamp.toDate();
+          if (date.isAfter(start.subtract(const Duration(seconds: 1))) &&
+              date.isBefore(end)) {
+            total += (data['amount'] as num).toDouble();
+          }
+        } else {
+          total += (data['amount'] as num).toDouble();
+        }
+      }
     }
 
     return total;
@@ -253,7 +289,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     budget.month,
                     budget.year,
                   ),
-                  onDelete: () => _deleteBudget(budget.id),
+                  onDelete: () => _deleteBudgetCascade(budget.id, budget.category),
                 ),
               ),
           ],
@@ -331,7 +367,6 @@ class _BudgetCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // --- ОҢ ЖАҚТАРЫНДАҒЫ ПАЙЫЗ ЖӘНЕ ӨШІРУ БАТЫРМАСЫ ---
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

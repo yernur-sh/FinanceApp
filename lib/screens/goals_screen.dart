@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // ✅ Түзу
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/goal_model.dart';
 
@@ -43,8 +43,27 @@ class _GoalsScreenState extends State<GoalsScreen> {
     return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
   }
 
-  Future<void> _deleteGoal(String id) async {
-    await _firestore.collection('goals').doc(id).delete();
+  /// 🎯 ӨЗГЕРІС: Ішкі Index талап етпейтіндей жөнделді
+  Future<void> _deleteGoal(String goalId) async {
+    if (_userId == null) return;
+
+    final batch = _firestore.batch();
+
+    // 1. Мақсатты өшіру
+    final goalRef = _firestore.collection('goals').doc(goalId);
+    batch.delete(goalRef);
+
+    // 2. Осы мақсатқа қатысты барлық транзакцияларды табу (Тек goalId арқылы)
+    final relatedTransactions = await _firestore
+        .collection('transactions')
+        .where('goalId', isEqualTo: goalId)
+        .get();
+
+    for (var doc in relatedTransactions.docs) {
+      batch.delete(doc.reference);
+    }
+
+    await batch.commit();
   }
 
   void _addGoal() {
