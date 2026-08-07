@@ -62,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _addTransaction({TransactionType initialType = TransactionType.expense}) {
     final titleController = TextEditingController(); // Табыс атауы үшін
     final amountController = TextEditingController();
+    final noteController = TextEditingController(); // Ескертпе үшін
     TransactionType selectedType = initialType;
     String? selectedGoalId;
     String? selectedBudgetCategory;
@@ -142,72 +143,110 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
 
+                    // --- ЕСКЕРТПЕ ӨРІСІ (сома астында) ---
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: noteController,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        labelText: 'Комментарий',
+                        hintText: 'Себеп-салдары',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+
                     // --- ШЫҒЫН ТАҢДАЛҒАНДА БЮДЖЕТ САНАТТАРЫ ---
                     if (selectedType == TransactionType.expense) ...[
                       const SizedBox(height: 16),
-                      Text(
-                        'Бюджет санатынан таңдаңыз',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Бюджет санатынан таңдаңыз',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          if (selectedGoalId != null)
+                            Text(
+                              'Мақсат таңдалды',
+                              style: TextStyle(
+                                  color: Colors.grey.shade400, fontSize: 12),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 8),
-                      StreamBuilder<QuerySnapshot>(
-                        stream: _userId == null
-                            ? null
-                            : _firestore
-                            .collection('budgets')
-                            .where('userId', isEqualTo: _userId)
-                            .where('month', isEqualTo: now.month)
-                            .where('year', isEqualTo: now.year)
-                            .snapshots(),
-                        builder: (context, budgetSnapshot) {
-                          if (!budgetSnapshot.hasData) {
-                            return const SizedBox(
-                              height: 32,
-                              child: Center(
-                                child: SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              ),
-                            );
-                          }
-                          final budgets = budgetSnapshot.data!.docs
-                              .map((d) => BudgetModel.fromDoc(d))
-                              .toList();
+                      // Мақсат таңдалған болса, бюджет таңдау опциясын бұғаттаймыз
+                      Opacity(
+                        opacity: selectedGoalId != null ? 0.4 : 1,
+                        child: IgnorePointer(
+                          ignoring: selectedGoalId != null,
+                          child: StreamBuilder<QuerySnapshot>(
+                            stream: _userId == null
+                                ? null
+                                : _firestore
+                                .collection('budgets')
+                                .where('userId', isEqualTo: _userId)
+                                .where('month', isEqualTo: now.month)
+                                .where('year', isEqualTo: now.year)
+                                .snapshots(),
+                            builder: (context, budgetSnapshot) {
+                              if (!budgetSnapshot.hasData) {
+                                return const SizedBox(
+                                  height: 32,
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    ),
+                                  ),
+                                );
+                              }
+                              final budgets = budgetSnapshot.data!.docs
+                                  .map((d) => BudgetModel.fromDoc(d))
+                                  .toList();
 
-                          if (budgets.isEmpty) {
-                            return Text(
-                              'Әзірге бюджет санаттары жоқ. Алдымен "Бюджет" бетінде санат құрыңыз',
-                              style: TextStyle(
-                                  color: Colors.grey.shade500, fontSize: 13),
-                            );
-                          }
+                              if (budgets.isEmpty) {
+                                return Text(
+                                  'Әзірге бюджет санаттары жоқ. Алдымен "Бюджет" бетінде санат құрыңыз',
+                                  style: TextStyle(
+                                      color: Colors.grey.shade500,
+                                      fontSize: 13),
+                                );
+                              }
 
-                          return Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: budgets.map((b) {
-                              final selected =
-                                  selectedBudgetCategory == b.category;
-                              return ChoiceChip(
-                                label: Text(b.category),
-                                selected: selected,
-                                selectedColor: const Color(0xFF6C63FF),
-                                labelStyle: TextStyle(
-                                  color: selected ? Colors.white : Colors.black87,
-                                  fontSize: 13,
-                                ),
-                                onSelected: (isSelected) {
-                                  setModalState(() {
-                                    selectedBudgetCategory =
-                                    isSelected ? b.category : null;
-                                  });
-                                },
+                              return Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: budgets.map((b) {
+                                  final selected =
+                                      selectedBudgetCategory == b.category;
+                                  return ChoiceChip(
+                                    label: Text(b.category),
+                                    selected: selected,
+                                    selectedColor: const Color(0xFF6C63FF),
+                                    labelStyle: TextStyle(
+                                      color: selected
+                                          ? Colors.white
+                                          : Colors.black87,
+                                      fontSize: 13,
+                                    ),
+                                    onSelected: (isSelected) {
+                                      setModalState(() {
+                                        selectedBudgetCategory =
+                                        isSelected ? b.category : null;
+                                        // Бюджет таңдалса, мақсатты тазалаймыз
+                                        if (isSelected) {
+                                          selectedGoalId = null;
+                                        }
+                                      });
+                                    },
+                                  );
+                                }).toList(),
                               );
-                            }).toList(),
-                          );
-                        },
+                            },
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 6),
                     ],
@@ -215,65 +254,92 @@ class _HomeScreenState extends State<HomeScreen> {
                     // --- ШЫҒЫН ТАҢДАЛҒАНДА МАҚСАТТАР ТІЗІМІ ---
                     if (selectedType == TransactionType.expense) ...[
                       const SizedBox(height: 16),
-                      Text(
-                        'Мақсатқа қосу керек пе?',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Мақсатқа қосу керек пе?',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          if (selectedBudgetCategory != null)
+                            Text(
+                              'Санат таңдалды',
+                              style: TextStyle(
+                                  color: Colors.grey.shade400, fontSize: 12),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 8),
-                      StreamBuilder<QuerySnapshot>(
-                        stream: _userId == null
-                            ? null
-                            : _firestore
-                            .collection('goals')
-                            .where('userId', isEqualTo: _userId)
-                            .snapshots(),
-                        builder: (context, goalSnapshot) {
-                          if (!goalSnapshot.hasData) {
-                            return const SizedBox(
-                              height: 32,
-                              child: Center(
-                                child: SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              ),
-                            );
-                          }
-                          final goals = goalSnapshot.data!.docs
-                              .map((d) => GoalModel.fromDoc(d))
-                              .toList();
+                      // Бюджет санаты таңдалған болса, мақсат таңдауды бұғаттаймыз
+                      Opacity(
+                        opacity: selectedBudgetCategory != null ? 0.4 : 1,
+                        child: IgnorePointer(
+                          ignoring: selectedBudgetCategory != null,
+                          child: StreamBuilder<QuerySnapshot>(
+                            stream: _userId == null
+                                ? null
+                                : _firestore
+                                .collection('goals')
+                                .where('userId', isEqualTo: _userId)
+                                .snapshots(),
+                            builder: (context, goalSnapshot) {
+                              if (!goalSnapshot.hasData) {
+                                return const SizedBox(
+                                  height: 32,
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    ),
+                                  ),
+                                );
+                              }
+                              final goals = goalSnapshot.data!.docs
+                                  .map((d) => GoalModel.fromDoc(d))
+                                  .toList();
 
-                          if (goals.isEmpty) {
-                            return Text(
-                              'Әзірге мақсаттарыңыз жоқ',
-                              style: TextStyle(
-                                  color: Colors.grey.shade500, fontSize: 13),
-                            );
-                          }
+                              if (goals.isEmpty) {
+                                return Text(
+                                  'Әзірге мақсаттарыңыз жоқ',
+                                  style: TextStyle(
+                                      color: Colors.grey.shade500,
+                                      fontSize: 13),
+                                );
+                              }
 
-                          return Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: goals.map((g) {
-                              final selected = selectedGoalId == g.id;
-                              return ChoiceChip(
-                                label: Text(g.title),
-                                selected: selected,
-                                selectedColor: const Color(0xFF6C63FF),
-                                labelStyle: TextStyle(
-                                  color: selected ? Colors.white : Colors.black87,
-                                  fontSize: 13,
-                                ),
-                                onSelected: (isSelected) {
-                                  setModalState(() {
-                                    selectedGoalId = isSelected ? g.id : null;
-                                  });
-                                },
+                              return Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: goals.map((g) {
+                                  final selected = selectedGoalId == g.id;
+                                  return ChoiceChip(
+                                    label: Text(g.title),
+                                    selected: selected,
+                                    selectedColor: const Color(0xFF6C63FF),
+                                    labelStyle: TextStyle(
+                                      color: selected
+                                          ? Colors.white
+                                          : Colors.black87,
+                                      fontSize: 13,
+                                    ),
+                                    onSelected: (isSelected) {
+                                      setModalState(() {
+                                        selectedGoalId =
+                                        isSelected ? g.id : null;
+                                        // Мақсат таңдалса, бюджет санатын тазалаймыз
+                                        if (isSelected) {
+                                          selectedBudgetCategory = null;
+                                        }
+                                      });
+                                    },
+                                  );
+                                }).toList(),
                               );
-                            }).toList(),
-                          );
-                        },
+                            },
+                          ),
+                        ),
                       ),
                     ],
 
@@ -295,6 +361,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         final isExpense = selectedType == TransactionType.expense;
                         final enteredTitle = titleController.text.trim();
+                        final enteredNote = noteController.text.trim();
 
                         String finalTitle = 'Шығын';
                         String finalCategory = '-';
@@ -334,6 +401,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           type: selectedType,
                           date: DateTime.now(),
                           goalId: selectedGoalId,
+                          note: enteredNote.isEmpty ? null : enteredNote,
                         );
 
                         if (context.mounted) Navigator.pop(context);
@@ -611,6 +679,7 @@ class _TransactionTile extends StatelessWidget {
     final isIncome = transaction.type == TransactionType.income;
     final color = isIncome ? const Color(0xFF34C471) : const Color(0xFFE05B49);
     final sign = isIncome ? '+' : '-';
+    final hasNote = transaction.note != null && transaction.note!.isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -627,11 +696,15 @@ class _TransactionTile extends StatelessWidget {
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          Padding(
+            padding: const EdgeInsets.only(top: 5),
+            child: Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -643,10 +716,23 @@ class _TransactionTile extends StatelessWidget {
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                Text(
-                  transaction.category,
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-                ),
+                if (transaction.title != transaction.category) ...[
+                  Text(
+                    transaction.category,
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                  ),
+                ],
+                if (hasNote) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    transaction.note!,
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 12,
+                      fontStyle: FontStyle.normal,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

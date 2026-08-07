@@ -168,7 +168,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     ),
                   )
                 else ...[
-                  // Оқшауланған интерактивті диаграмма виджеті
+                  // Қауіпсіз интерактивті диаграмма
                   _InteractiveCategoryExpenses(
                     categoryExpenses: categoryExpenses,
                     totalExpense: totalExpense,
@@ -403,7 +403,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 }
 
 // -----------------------------------------------------------------------------
-// ТҮЗЕТІЛГЕН ЖЕКЕ ДИАГРАММА ВИДЖЕТІ (Жыпылықтауды болдырмайды)
+// ТҮЗЕТІЛГЕН ЖӘНЕ ҚАУІПСІЗ ДИАГРАММА ВИДЖЕТІ
 // -----------------------------------------------------------------------------
 class _InteractiveCategoryExpenses extends StatefulWidget {
   final Map<String, double> categoryExpenses;
@@ -430,6 +430,8 @@ class _InteractiveCategoryExpensesState extends State<_InteractiveCategoryExpens
     final entries = widget.categoryExpenses.entries.toList();
     entries.sort((a, b) => b.value.compareTo(a.value));
 
+    final hasExpenses = widget.totalExpense > 0 && entries.isNotEmpty;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -454,43 +456,64 @@ class _InteractiveCategoryExpensesState extends State<_InteractiveCategoryExpens
             ),
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            height: 200,
-            child: PieChart(
-              PieChartData(
-                pieTouchData: PieTouchData(
-                  touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                    if (!event.isInterestedForInteractions ||
-                        pieTouchResponse == null ||
-                        pieTouchResponse.touchedSection == null) {
-                      if (_touchedPieIndex != -1) {
+
+          if (!hasExpenses)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32.0),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.monetization_on_outlined,
+                        size: 48, color: Colors.grey.shade300),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Бұл мерзімде шығындар тіркелмеген',
+                      style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else ...[
+            SizedBox(
+              height: 200,
+              child: PieChart(
+                PieChartData(
+                  pieTouchData: PieTouchData(
+                    touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                      if (!event.isInterestedForInteractions ||
+                          pieTouchResponse == null ||
+                          pieTouchResponse.touchedSection == null ||
+                          !hasExpenses) {
+                        if (_touchedPieIndex != -1) {
+                          setState(() {
+                            _touchedPieIndex = -1;
+                          });
+                        }
+                        return;
+                      }
+
+                      final newIndex =
+                          pieTouchResponse.touchedSection!.touchedSectionIndex;
+
+                      if (_touchedPieIndex != newIndex) {
                         setState(() {
-                          _touchedPieIndex = -1;
+                          _touchedPieIndex = newIndex;
                         });
                       }
-                      return;
-                    }
-
-                    final newIndex =
-                        pieTouchResponse.touchedSection!.touchedSectionIndex;
-
-                    if (_touchedPieIndex != newIndex) {
-                      setState(() {
-                        _touchedPieIndex = newIndex;
-                      });
-                    }
-                  },
+                    },
+                  ),
+                  sectionsSpace: 3,
+                  centerSpaceRadius: 50,
+                  sections: _buildSections(entries),
                 ),
-                sectionsSpace: 3,
-                centerSpaceRadius: 50,
-                sections: _buildSections(entries),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          const Divider(),
-          const SizedBox(height: 12),
-          ..._buildCategoryList(entries),
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 12),
+            ..._buildCategoryList(entries),
+          ],
         ],
       ),
     );
@@ -503,7 +526,6 @@ class _InteractiveCategoryExpensesState extends State<_InteractiveCategoryExpens
       final index = entry.key;
       final value = entry.value.value;
       final isTouched = index == _touchedPieIndex;
-      // Радиус айырмашылығын 48/45 қылып жұмсарттық (секірісті болдырмау үшін)
       final radius = isTouched ? 48.0 : 45.0;
       final color = widget.chartColors[index % widget.chartColors.length];
 
