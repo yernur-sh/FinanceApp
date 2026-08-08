@@ -218,7 +218,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Қаржылық мақсаттар',
+                  'Мақсаттар',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
