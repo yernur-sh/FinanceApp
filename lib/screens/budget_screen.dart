@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/budget_model.dart';
+import '../theme/app_theme.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -21,29 +22,24 @@ class _BudgetScreenState extends State<BudgetScreen> {
     return formatter.format(value).replaceAll(',', ' ');
   }
 
-  /// 🔹 БҮДЖЕТТІ ЖӘНЕ ОҒАН ҚАТЫСТЫ БАРЛЫҚ ТРАНЗАКЦИЯЛАРДЫ БІРГЕ ӨШІРУ
   Future<void> _deleteBudgetCascade(String budgetId, String categoryName) async {
     if (_userId == null) return;
 
     final batch = _firestore.batch();
 
-    // 1. Бюджет құжатын өшіруге дайындаймыз
     final budgetRef = _firestore.collection('budgets').doc(budgetId);
     batch.delete(budgetRef);
 
-    // 2. Осы санатқа жататын пайдаланушының транзакцияларын табамыз
     final transactionsQuery = await _firestore
         .collection('transactions')
         .where('userId', isEqualTo: _userId)
         .where('category', isEqualTo: categoryName)
         .get();
 
-    // 3. Табылған транзакциялардың барлығын өшіруге қосамыз
     for (var doc in transactionsQuery.docs) {
       batch.delete(doc.reference);
     }
 
-    // 4. Барлық транзакция мен бюджетті бірге өшіреміз (Atomic operation)
     await batch.commit();
   }
 
@@ -56,8 +52,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: kSurface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (context) {
         return StatefulBuilder(
@@ -73,32 +70,35 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Жаңа бюджет',
-                    style: Theme.of(context).textTheme.titleLarge,
+                  Center(
+                    child: Container(
+                      width: 38,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 18),
+                      decoration: BoxDecoration(
+                        color: kBorderStrong,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
                   ),
+                  Text('Жаңа бюджет',
+                      style: appDisplay(fontSize: 19, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 16),
                   TextField(
                     controller: categoryController,
-                    decoration: const InputDecoration(
-                      labelText: 'Санат (мыс. Көлік, Тамақ)',
-                      border: OutlineInputBorder(),
-                    ),
+                    style: appBody(fontSize: 14.5),
+                    decoration: appFieldDecoration('Санат (мыс. Көлік, Тамақ)'),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: limitController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Лимит (₸)',
-                      border: OutlineInputBorder(),
-                    ),
+                    style: appBody(fontSize: 14.5),
+                    decoration: appFieldDecoration('Лимит (₸)'),
                   ),
                   const SizedBox(height: 20),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
+                  GradientButton(
+                    label: 'Бюджет құру',
                     onPressed: () async {
                       final limit = double.tryParse(
                         limitController.text.trim(),
@@ -132,7 +132,6 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           .collection('budgets')
                           .add(newBudget.toMap(_userId!));
                     },
-                    child: const Text('Бюджет құру'),
                   ),
                 ],
               ),
@@ -143,18 +142,16 @@ class _BudgetScreenState extends State<BudgetScreen> {
     );
   }
 
-  /// 🔹 Санат бойынша ағымдағы айдың шығындарын есептеу
   Future<double> _getSpentForCategory(
-      String category,
-      int month,
-      int year,
-      ) async {
+    String category,
+    int month,
+    int year,
+  ) async {
     if (_userId == null) return 0.0;
 
     final start = DateTime(year, month, 1);
     final end = DateTime(year, month + 1, 1);
 
-    // Сұраныста қате болмауы үшін транзакцияларды сүзіп алып, датасын ішінде тексереміз
     final snapshot = await _firestore
         .collection('transactions')
         .where('userId', isEqualTo: _userId)
@@ -165,7 +162,6 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
     for (final doc in snapshot.docs) {
       final data = doc.data();
-      // 'type' тек 'expense' (шығын) болса және осы айда жасалса ғана есептейміз
       final type = data['type']?.toString();
       final createdAtTimestamp = data['createdAt'] as Timestamp?;
 
@@ -188,7 +184,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
   @override
   Widget build(BuildContext context) {
     if (_userId == null) {
-      return const Center(child: Text('Кіру қажет'));
+      return Center(
+          child: Text('Кіру қажет', style: appBody(color: kTextSecondary)));
     }
 
     final now = DateTime.now();
@@ -204,31 +201,27 @@ class _BudgetScreenState extends State<BudgetScreen> {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator(color: kAccent));
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text('Қате: ${snapshot.error}'));
+          return Center(
+              child: Text('Қате: ${snapshot.error}',
+                  style: appBody(color: kTextSecondary)));
         }
 
-        final budgets =
-            snapshot.data?.docs
+        final budgets = snapshot.data?.docs
                 .map((doc) => BudgetModel.fromDoc(doc))
                 .toList() ??
-                [];
+            [];
 
         return ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 120),
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Бюджет',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text('Бюджет', style: appDisplay(fontSize: 24, fontWeight: FontWeight.w700)),
                 InkWell(
                   onTap: _addBudget,
                   borderRadius: BorderRadius.circular(14),
@@ -236,8 +229,15 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6C63FF),
+                      gradient: kAccentGradient,
                       borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: kAccent.withOpacity(0.4),
+                          blurRadius: 14,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
                     child: const Icon(Icons.add, color: Colors.white),
                   ),
@@ -245,43 +245,33 @@ class _BudgetScreenState extends State<BudgetScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              'Ағымдағы ай',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
-            ),
+            Text('Ағымдағы ай', style: appBody(color: kTextMuted, fontSize: 15)),
             const SizedBox(height: 20),
             if (budgets.isEmpty)
-              Padding(
+              GlassCard(
                 padding: const EdgeInsets.symmetric(vertical: 48),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.account_balance_wallet_outlined,
-                        size: 48,
-                        color: Colors.grey.shade300,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Әзірге бюджеттер жоқ',
-                        style: TextStyle(color: Colors.grey.shade500),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Жаңа бюджет қосу үшін + батырмасын басыңыз',
-                        style: TextStyle(
-                          color: Colors.grey.shade400,
-                          fontSize: 13,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
+                radius: 24,
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 48,
+                      color: kTextMuted,
+                    ),
+                    const SizedBox(height: 12),
+                    Text('Әзірге бюджеттер жоқ', style: appBody(color: kTextMuted)),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Жаңа бюджет қосу үшін + батырмасын басыңыз',
+                      style: appBody(color: kTextMuted, fontSize: 13),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               )
             else
               ...budgets.map(
-                    (budget) => _BudgetCard(
+                (budget) => _BudgetCard(
                   budget: budget,
                   formatMoney: _formatMoney,
                   getSpent: () => _getSpentForCategory(
@@ -329,15 +319,9 @@ class _BudgetCard extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 14),
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            gradient: kSurfaceGradient,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: kBorder),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -351,18 +335,13 @@ class _BudgetCard extends StatelessWidget {
                       children: [
                         Text(
                           budget.category,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                          style: appBody(
+                              fontWeight: FontWeight.w700, fontSize: 16, color: kTextPrimary),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Лимит: ${formatMoney(budget.limit)} ₸',
-                          style: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontSize: 13,
-                          ),
+                          style: appBody(color: kTextMuted, fontSize: 13),
                         ),
                       ],
                     ),
@@ -372,11 +351,9 @@ class _BudgetCard extends StatelessWidget {
                     children: [
                       Text(
                         '$percent%',
-                        style: TextStyle(
-                          color: isOver
-                              ? const Color(0xFFE05B49)
-                              : const Color(0xFF34C471),
-                          fontWeight: FontWeight.bold,
+                        style: appBody(
+                          color: isOver ? kClay : kGreen,
+                          fontWeight: FontWeight.w700,
                           fontSize: 15,
                         ),
                       ),
@@ -384,9 +361,9 @@ class _BudgetCard extends StatelessWidget {
                       IconButton(
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
-                        icon: Icon(
+                        icon: const Icon(
                           Icons.delete_outline,
-                          color: Colors.grey.shade400,
+                          color: kTextMuted,
                           size: 20,
                         ),
                         onPressed: onDelete,
@@ -401,9 +378,9 @@ class _BudgetCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 8,
-                  backgroundColor: Colors.grey.shade200,
+                  backgroundColor: Colors.white.withOpacity(0.06),
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    isOver ? const Color(0xFFE05B49) : const Color(0xFF34C471),
+                    isOver ? kClay : kGreen,
                   ),
                 ),
               ),
@@ -413,21 +390,14 @@ class _BudgetCard extends StatelessWidget {
                 children: [
                   Text(
                     '${formatMoney(spent)} ₸ жұмсалды',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 12,
-                    ),
+                    style: appBody(color: kTextSecondary, fontSize: 12),
                   ),
                   Text(
-                    isOver
-                        ? 'Асып кетті'
-                        : '${formatMoney(remaining)} ₸ қалды',
-                    style: TextStyle(
-                      color: isOver
-                          ? const Color(0xFFE05B49)
-                          : Colors.grey.shade600,
+                    isOver ? 'Асып кетті' : '${formatMoney(remaining)} ₸ қалды',
+                    style: appBody(
+                      color: isOver ? kClay : kTextSecondary,
                       fontSize: 12,
-                      fontWeight: isOver ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isOver ? FontWeight.w700 : FontWeight.normal,
                     ),
                   ),
                 ],

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // ✅ Түзу
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/goal_model.dart';
+import '../theme/app_theme.dart';
 
 class GoalsScreen extends StatefulWidget {
   const GoalsScreen({super.key});
@@ -31,7 +32,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snap) =>
-        snap.docs.map((doc) => GoalModel.fromDoc(doc)).toList());
+            snap.docs.map((doc) => GoalModel.fromDoc(doc)).toList());
   }
 
   String _formatMoney(double value) {
@@ -43,17 +44,14 @@ class _GoalsScreenState extends State<GoalsScreen> {
     return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
   }
 
-  /// 🎯 ӨЗГЕРІС: Ішкі Index талап етпейтіндей жөнделді
   Future<void> _deleteGoal(String goalId) async {
     if (_userId == null) return;
 
     final batch = _firestore.batch();
 
-    // 1. Мақсатты өшіру
     final goalRef = _firestore.collection('goals').doc(goalId);
     batch.delete(goalRef);
 
-    // 2. Осы мақсатқа қатысты барлық транзакцияларды табу (Тек goalId арқылы)
     final relatedTransactions = await _firestore
         .collection('transactions')
         .where('goalId', isEqualTo: goalId)
@@ -75,8 +73,9 @@ class _GoalsScreenState extends State<GoalsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: kSurface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (context) {
         return StatefulBuilder(
@@ -92,27 +91,34 @@ class _GoalsScreenState extends State<GoalsScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Center(
+                    child: Container(
+                      width: 38,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 18),
+                      decoration: BoxDecoration(
+                        color: kBorderStrong,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
                   Text('Жаңа мақсат',
-                      style: Theme.of(context).textTheme.titleLarge),
+                      style: appDisplay(fontSize: 19, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 16),
                   TextField(
                     controller: titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Мақсат атауы',
-                      border: OutlineInputBorder(),
-                    ),
+                    style: appBody(fontSize: 14.5),
+                    decoration: appFieldDecoration('Мақсат атауы'),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: targetController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Мақсатты сома (₸)',
-                      border: OutlineInputBorder(),
-                    ),
+                    style: appBody(fontSize: 14.5),
+                    decoration: appFieldDecoration('Мақсатты сома (₸)'),
                   ),
                   const SizedBox(height: 16),
-                  Text('Санат', style: Theme.of(context).textTheme.bodyMedium),
+                  Text('Санат', style: appBody(color: kTextSecondary, fontSize: 13.5)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -126,9 +132,15 @@ class _GoalsScreenState extends State<GoalsScreen> {
                             size: 18,
                             color: selected ? Colors.white : info.color),
                         selected: selected,
+                        backgroundColor: Colors.white.withOpacity(0.05),
                         selectedColor: info.color,
-                        labelStyle: TextStyle(
-                            color: selected ? Colors.white : Colors.black87),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(color: selected ? info.color : kBorder),
+                        ),
+                        labelStyle: appBody(
+                            color: selected ? Colors.white : kTextSecondary,
+                            fontWeight: FontWeight.w600),
                         onSelected: (_) {
                           setModalState(() => selectedCategory = cat);
                         },
@@ -137,10 +149,19 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   ),
                   const SizedBox(height: 16),
                   OutlinedButton.icon(
-                    icon: const Icon(Icons.calendar_today, size: 18),
-                    label: Text(selectedDeadline == null
-                        ? 'Мерзімін таңдау (міндетті емес)'
-                        : _formatDate(selectedDeadline!)),
+                    icon: Icon(Icons.calendar_today, size: 18, color: kAccentLight),
+                    label: Text(
+                      selectedDeadline == null
+                          ? 'Мерзімін таңдау (міндетті емес)'
+                          : _formatDate(selectedDeadline!),
+                      style: appBody(color: kTextSecondary),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: kBorder),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
                     onPressed: () async {
                       final picked = await showDatePicker(
                         context: context,
@@ -154,9 +175,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16)),
+                  GradientButton(
+                    label: 'Мақсат құру',
                     onPressed: () async {
                       final target = double.tryParse(targetController.text.trim());
                       if (titleController.text.trim().isEmpty ||
@@ -186,7 +206,6 @@ class _GoalsScreenState extends State<GoalsScreen> {
                             .add(newGoal.toMap(_userId!));
                       }
                     },
-                    child: const Text('Мақсат құру'),
                   ),
                 ],
               ),
@@ -203,26 +222,23 @@ class _GoalsScreenState extends State<GoalsScreen> {
       stream: _goalsStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator(color: kAccent));
         }
         if (snapshot.hasError) {
-          return Center(child: Text('Қате: ${snapshot.error}'));
+          return Center(
+              child: Text('Қате: ${snapshot.error}',
+                  style: appBody(color: kTextSecondary)));
         }
 
         final goals = snapshot.data ?? [];
 
         return ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 120),
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Мақсаттар',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text('Мақсаттар', style: appDisplay(fontSize: 24, fontWeight: FontWeight.w700)),
                 InkWell(
                   onTap: _addGoal,
                   borderRadius: BorderRadius.circular(14),
@@ -230,8 +246,15 @@ class _GoalsScreenState extends State<GoalsScreen> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6C63FF),
+                      gradient: kAccentGradient,
                       borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: kAccent.withOpacity(0.4),
+                          blurRadius: 14,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
                     child: const Icon(Icons.add, color: Colors.white),
                   ),
@@ -239,42 +262,33 @@ class _GoalsScreenState extends State<GoalsScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              'Белсенді мақсаттар',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
-            ),
+            Text('Белсенді мақсаттар', style: appBody(color: kTextMuted, fontSize: 15)),
             const SizedBox(height: 20),
             if (goals.isEmpty)
-              Padding(
+              GlassCard(
                 padding: const EdgeInsets.symmetric(vertical: 48),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Icon(Icons.flag_outlined,
-                          size: 48, color: Colors.grey.shade300),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Әзірге мақсаттар жоқ',
-                        style: TextStyle(color: Colors.grey.shade500),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Жаңа мақсат қосу үшін + батырмасын басыңыз',
-                        style: TextStyle(
-                            color: Colors.grey.shade400, fontSize: 13),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
+                radius: 24,
+                child: Column(
+                  children: [
+                    const Icon(Icons.flag_outlined, size: 48, color: kTextMuted),
+                    const SizedBox(height: 12),
+                    Text('Әзірге мақсаттар жоқ', style: appBody(color: kTextMuted)),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Жаңа мақсат қосу үшін + батырмасын басыңыз',
+                      style: appBody(color: kTextMuted, fontSize: 13),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               )
             else
               ...goals.map((g) => _GoalCard(
-                goal: g,
-                formatMoney: _formatMoney,
-                formatDate: _formatDate,
-                onDelete: () => _deleteGoal(g.id),
-              )),
+                    goal: g,
+                    formatMoney: _formatMoney,
+                    formatDate: _formatDate,
+                    onDelete: () => _deleteGoal(g.id),
+                  )),
           ],
         );
       },
@@ -303,15 +317,9 @@ class _GoalCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        gradient: kSurfaceGradient,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: kBorder),
       ),
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -324,7 +332,7 @@ class _GoalCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: info.color.withOpacity(0.12),
+                    color: info.color.withOpacity(0.16),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(info.icon, color: info.color, size: 22),
@@ -336,29 +344,27 @@ class _GoalCard extends StatelessWidget {
                     children: [
                       Text(
                         goal.title,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16),
+                        style: appBody(
+                            fontWeight: FontWeight.w700, fontSize: 16, color: kTextPrimary),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Мақсат: ${formatMoney(goal.targetAmount)} ₸',
-                        style: TextStyle(
-                            color: Colors.grey.shade500, fontSize: 13),
+                        style: appBody(color: kTextMuted, fontSize: 13),
                       ),
                     ],
                   ),
                 ),
                 Text(
                   '${goal.progressPercent}%',
-                  style: TextStyle(
-                    color: isDone ? const Color(0xFF34C471) : info.color,
-                    fontWeight: FontWeight.bold,
+                  style: appBody(
+                    color: isDone ? kGreen : info.color,
+                    fontWeight: FontWeight.w700,
                     fontSize: 18,
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.delete_outline,
-                      color: Colors.grey.shade400, size: 20),
+                  icon: const Icon(Icons.delete_outline, color: kTextMuted, size: 20),
                   onPressed: onDelete,
                 ),
               ],
@@ -369,9 +375,9 @@ class _GoalCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: goal.progress,
                 minHeight: 8,
-                backgroundColor: info.color.withOpacity(0.12),
+                backgroundColor: info.color.withOpacity(0.16),
                 valueColor: AlwaysStoppedAnimation<Color>(
-                    isDone ? const Color(0xFF34C471) : info.color),
+                    isDone ? kGreen : info.color),
               ),
             ),
             const SizedBox(height: 8),
@@ -380,12 +386,12 @@ class _GoalCard extends StatelessWidget {
               children: [
                 Text(
                   '${formatMoney(goal.currentAmount)} ₸ жиналды',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  style: appBody(color: kTextSecondary, fontSize: 12),
                 ),
                 if (goal.deadline != null)
                   Text(
                     formatDate(goal.deadline!),
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                    style: appBody(color: kTextMuted, fontSize: 12),
                   ),
               ],
             ),

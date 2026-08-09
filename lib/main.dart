@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // 1. Firebase Auth импорттаймыз
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
+import 'theme/app_theme.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
@@ -23,22 +24,21 @@ class FinanceApp extends StatelessWidget {
     return MaterialApp(
       title: 'Қаржылай сауаттылық',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      // 2. initialRoute орнына StreamBuilder арқылы бақылаймыз
+      theme: buildAppTheme(),
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          // Жүктеліп жатқанда индикатор көрсету
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
+            return const AppBackground(
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                body: Center(
+                  child: CircularProgressIndicator(color: kAccent),
+                ),
+              ),
             );
           }
 
-          // Егер сессия бар болса -> HomeScreen, жоқ болса -> LoginScreen
           if (snapshot.hasData && snapshot.data != null) {
             return const HomeScreen();
           }
@@ -46,7 +46,6 @@ class FinanceApp extends StatelessWidget {
           return const LoginScreen();
         },
       ),
-      // Маршруттарды (routes) навигация үшін қалдырамыз
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),

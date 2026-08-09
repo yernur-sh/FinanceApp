@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../theme/app_theme.dart';
 
 class ProfileScreen extends StatelessWidget {
   final bool embedded;
@@ -9,17 +10,22 @@ class ProfileScreen extends StatelessWidget {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Жүйеден шығу'),
-        content: const Text('Шын мәнінде аккаунттан шыққыңыз келе ме?'),
+        backgroundColor: kSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: kBorder),
+        ),
+        title: Text('Жүйеден шығу', style: appBody(color: kTextPrimary, fontWeight: FontWeight.w700)),
+        content: Text('Шын мәнінде аккаунттан шыққыңыз келе ме?',
+            style: appBody(color: kTextSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Бас тарту', style: TextStyle(color: Colors.grey)),
+            child: Text('Бас тарту', style: appBody(color: kTextMuted)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFE05B49),
+              backgroundColor: kClay,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -53,44 +59,49 @@ class ProfileScreen extends StatelessWidget {
     final rawName = user?.displayName ?? '';
     final email = user?.email ?? 'email@example.com';
 
-    // Егер displayName бос болса, email-дің басын пайдалану
     final displayName = rawName.isNotEmpty
         ? rawName
         : (email.contains('@') ? email.split('@')[0] : 'Пайдаланушы');
 
     final content = ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 120),
       children: [
-        // --- ПРОФИЛЬ ХЕДЕРІ (Аватар + Аты) ---
-// --- ПРОФИЛЬ ХЕДЕРІ (Дефолтный персон суреті + Аты) ---
+        if (embedded) ...[
+          Text('Профиль', style: appDisplay(fontSize: 24, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 20),
+        ],
         Center(
           child: Column(
             children: [
-              const CircleAvatar(
-                radius: 46,
-                backgroundColor: Color(0xFF6C63FF),
-                child: Icon(
+              Container(
+                width: 92,
+                height: 92,
+                decoration: BoxDecoration(
+                  gradient: kAccentGradient,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: kAccent.withOpacity(0.35),
+                      blurRadius: 26,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
+                ),
+                child: const Icon(
                   Icons.person,
-                  size: 48,
+                  size: 44,
                   color: Colors.white,
                 ),
               ),
               const SizedBox(height: 14),
               Text(
                 displayName,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+                style: appBody(fontSize: 20, fontWeight: FontWeight.w700, color: kTextPrimary),
               ),
               const SizedBox(height: 2),
               Text(
                 email,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                ),
+                style: appBody(fontSize: 14, color: kTextMuted),
               ),
             ],
           ),
@@ -98,7 +109,6 @@ class ProfileScreen extends StatelessWidget {
 
         const SizedBox(height: 28),
 
-        // --- БӨЛІМ 1: ДЕРЕКТЕР МЕН БАПТАУЛАР ---
         _buildSectionTitle('Жеке баптаулар'),
         const SizedBox(height: 10),
         _buildSettingsCard([
@@ -119,12 +129,12 @@ class ProfileScreen extends StatelessWidget {
             title: 'Қауіпсіздік',
             subtitle: 'Құпия сөзді өзгерту',
             onTap: () {},
+            isLast: true,
           ),
         ]),
 
         const SizedBox(height: 24),
 
-        // --- БӨЛІМ 2: ҚОЛДАНБА ТУРАЛЫ ---
         _buildSectionTitle('Қолданба'),
         const SizedBox(height: 10),
         _buildSettingsCard([
@@ -138,29 +148,25 @@ class ProfileScreen extends StatelessWidget {
             title: 'Қолданба туралы',
             subtitle: 'Нұсқасы v1.0.0',
             onTap: () {},
+            isLast: true,
           ),
         ]),
 
         const SizedBox(height: 32),
 
-        // --- ШЫҒУ БАТЫРМАСЫ ---
         SizedBox(
           width: double.infinity,
-          height: 52,
+          height: 54,
           child: OutlinedButton.icon(
             onPressed: () => _logout(context),
-            icon: const Icon(Icons.logout_rounded, color: Color(0xFFE05B49)),
-            label: const Text(
+            icon: const Icon(Icons.logout_rounded, color: kClay),
+            label: Text(
               'Аккаунттан шығу',
-              style: TextStyle(
-                color: Color(0xFFE05B49),
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-              ),
+              style: appBody(color: kClay, fontWeight: FontWeight.w700, fontSize: 15),
             ),
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFFFD5D0)),
-              backgroundColor: const Color(0xFFFFF5F5),
+              side: BorderSide(color: kClay.withOpacity(0.4)),
+              backgroundColor: kClayBg,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -174,17 +180,14 @@ class ProfileScreen extends StatelessWidget {
     if (embedded) return content;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FE),
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text(
-          'Профиль',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
+        title: Text('Профиль',
+            style: appBody(fontWeight: FontWeight.w700, fontSize: 20)),
         centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
       ),
-      body: content,
+      body: AppBackground(child: content),
     );
   }
 
@@ -193,28 +196,15 @@ class ProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.only(left: 4),
       child: Text(
         title,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Colors.grey.shade600,
-        ),
+        style: appBody(fontSize: 13, fontWeight: FontWeight.w700, color: kTextMuted, letterSpacing: 0.4),
       ),
     );
   }
 
   Widget _buildSettingsCard(List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return GlassCard(
+      padding: EdgeInsets.zero,
+      radius: 20,
       child: Column(
         children: children,
       ),
@@ -222,51 +212,54 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-// Ішкі виджет: Баптаулар тилы
 class _ProfileOptionTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
   final VoidCallback onTap;
+  final bool isLast;
 
   const _ProfileOptionTile({
     required this.icon,
     required this.title,
     this.subtitle,
     required this.onTap,
+    this.isLast = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF2F1FF),
-          borderRadius: BorderRadius.circular(10),
+    return Container(
+      decoration: BoxDecoration(
+        border: isLast
+            ? null
+            : const Border(bottom: BorderSide(color: kBorder)),
+      ),
+      child: ListTile(
+        onTap: onTap,
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: kAccentBg,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: kAccentLight, size: 20),
         ),
-        child: Icon(icon, color: const Color(0xFF6C63FF), size: 20),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 15,
-          color: Colors.black87,
+        title: Text(
+          title,
+          style: appBody(fontWeight: FontWeight.w600, fontSize: 15, color: kTextPrimary),
+        ),
+        subtitle: subtitle != null
+            ? Text(
+                subtitle!,
+                style: appBody(fontSize: 12, color: kTextMuted),
+              )
+            : null,
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: kTextMuted,
         ),
       ),
-      subtitle: subtitle != null
-          ? Text(
-        subtitle!,
-        style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-      )
-          : null,
-      trailing: Icon(
-        Icons.chevron_right_rounded,
-        color: Colors.grey.shade400,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     );
   }
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/transaction_model.dart';
+import '../theme/app_theme.dart';
 
 enum TimeFilter { week, month, year }
 
@@ -47,180 +49,168 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   final List<Color> _chartColors = const [
-    Color(0xFF6C63FF),
-    Color(0xFF34C471),
-    Color(0xFF4A90E2),
-    Color(0xFFFFA726),
-    Color(0xFFE05B49),
-    Color(0xFFAB47BC),
-    Color(0xFF26C6DA),
+    Color(0xFF4C86FF),
+    Color(0xFF35E0A0),
+    Color(0xFF7FA8FF),
+    Color(0xFFFFB84D),
+    Color(0xFFFF6B62),
+    Color(0xFFC98BFF),
+    Color(0xFF3FD3E8),
   ];
 
   @override
   Widget build(BuildContext context) {
     if (_userId == null) {
-      return const Center(child: Text('Кіру қажет'));
+      return Center(
+          child: Text('Кіру қажет', style: appBody(color: kTextSecondary)));
     }
 
     final range = _getFilterRange();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FE),
-      body: SafeArea(
-        child: StreamBuilder<QuerySnapshot>(
-          stream: _firestore
-              .collection('transactions')
-              .where('userId', isEqualTo: _userId)
-              .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(range.start))
-              .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(range.end))
-              .orderBy('createdAt', descending: true)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Center(child: Text('Қате: ${snapshot.error}'));
-            }
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestore
+          .collection('transactions')
+          .where('userId', isEqualTo: _userId)
+          .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(range.start))
+          .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(range.end))
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: kAccent));
+        }
+        if (snapshot.hasError) {
+          return Center(
+              child: Text('Қате: ${snapshot.error}',
+                  style: appBody(color: kTextSecondary)));
+        }
 
-            final transactions = snapshot.data?.docs
-                .map((doc) => TransactionModel.fromDoc(doc))
-                .toList() ??
-                [];
+        final transactions = snapshot.data?.docs
+            .map((doc) => TransactionModel.fromDoc(doc))
+            .toList() ??
+            [];
 
-            final totalIncome = transactions
-                .where((t) => t.type == TransactionType.income)
-                .fold(0.0, (total, t) => total + t.amount);
+        final totalIncome = transactions
+            .where((t) => t.type == TransactionType.income)
+            .fold(0.0, (total, t) => total + t.amount);
 
-            final totalExpense = transactions
-                .where((t) => t.type == TransactionType.expense)
-                .fold(0.0, (total, t) => total + t.amount);
+        final totalExpense = transactions
+            .where((t) => t.type == TransactionType.expense)
+            .fold(0.0, (total, t) => total + t.amount);
 
-            final categoryExpenses = <String, double>{};
-            for (final t in transactions) {
-              if (t.type == TransactionType.expense) {
-                final cat = t.category.trim().isEmpty ? 'Басқа' : t.category;
-                categoryExpenses[cat] = (categoryExpenses[cat] ?? 0) + t.amount;
+        final categoryExpenses = <String, double>{};
+        for (final t in transactions) {
+          if (t.type == TransactionType.expense) {
+            final cat = t.category.trim().isEmpty ? 'Басқа' : t.category;
+            categoryExpenses[cat] = (categoryExpenses[cat] ?? 0) + t.amount;
+          }
+        }
+
+        final dailyData = <DateTime, double>{};
+        if (_selectedFilter == TimeFilter.week) {
+          for (int i = 6; i >= 0; i--) {
+            final day = DateTime(range.end.year, range.end.month, range.end.day - i);
+            dailyData[DateTime(day.year, day.month, day.day)] = 0.0;
+          }
+          for (final t in transactions) {
+            final day = DateTime(t.date.year, t.date.month, t.date.day);
+            if (dailyData.containsKey(day)) {
+              if (t.type == TransactionType.income) {
+                dailyData[day] = (dailyData[day] ?? 0) + t.amount;
+              } else {
+                dailyData[day] = (dailyData[day] ?? 0) - t.amount;
               }
             }
+          }
+        }
 
-            final dailyData = <DateTime, double>{};
-            if (_selectedFilter == TimeFilter.week) {
-              for (int i = 6; i >= 0; i--) {
-                final day = DateTime(range.end.year, range.end.month, range.end.day - i);
-                dailyData[DateTime(day.year, day.month, day.day)] = 0.0;
-              }
-              for (final t in transactions) {
-                final day = DateTime(t.date.year, t.date.month, t.date.day);
-                if (dailyData.containsKey(day)) {
-                  if (t.type == TransactionType.income) {
-                    dailyData[day] = (dailyData[day] ?? 0) + t.amount;
-                  } else {
-                    dailyData[day] = (dailyData[day] ?? 0) - t.amount;
-                  }
-                }
-              }
-            }
-
-            return ListView(
-              padding: const EdgeInsets.all(20),
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 120),
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Text('Аналитика', style: appDisplay(fontSize: 24, fontWeight: FontWeight.w700)),
+                _buildFilterSegment(),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            _SummaryRow(
+              income: totalIncome,
+              expense: totalExpense,
+              formatMoney: _formatMoney,
+            ),
+            const SizedBox(height: 24),
+
+            if (transactions.isEmpty)
+              GlassCard(
+                padding: const EdgeInsets.symmetric(vertical: 48),
+                radius: 24,
+                child: Column(
                   children: [
+                    const Icon(Icons.pie_chart_outline, size: 56, color: kTextMuted),
+                    const SizedBox(height: 12),
                     Text(
-                      'Аналитика',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF1E293B),
-                      ),
+                      'Тандалған уақыт аралығында деректер жоқ',
+                      style: appBody(color: kTextMuted, fontSize: 14),
                     ),
-                    _buildFilterSegment(),
                   ],
                 ),
-                const SizedBox(height: 20),
+              )
+            else ...[
+              _InteractiveCategoryExpenses(
+                categoryExpenses: categoryExpenses,
+                totalExpense: totalExpense,
+                chartColors: _chartColors,
+                formatMoney: _formatMoney,
+              ),
 
-                _SummaryRow(
-                  income: totalIncome,
-                  expense: totalExpense,
-                  formatMoney: _formatMoney,
-                ),
+              if (_selectedFilter == TimeFilter.week) ...[
                 const SizedBox(height: 24),
-
-                if (transactions.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 48),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(Icons.pie_chart_outline,
-                            size: 56, color: Colors.grey.shade300),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Тандалған уақыт аралығында деректер жоқ',
-                          style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  )
-                else ...[
-                  // Қауіпсіз интерактивті диаграмма
-                  _InteractiveCategoryExpenses(
-                    categoryExpenses: categoryExpenses,
-                    totalExpense: totalExpense,
-                    chartColors: _chartColors,
-                    formatMoney: _formatMoney,
-                  ),
-
-                  if (_selectedFilter == TimeFilter.week) ...[
-                    const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                GlassCard(
+                  padding: const EdgeInsets.all(20),
+                  radius: 24,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Күнделікті Баланс Динамикасы',
+                        style: appBody(
+                            fontSize: 16, fontWeight: FontWeight.w700, color: kTextPrimary),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Күнделікті Баланс Динамикасы',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1E293B),
-                            ),
+                      const SizedBox(height: 20),
+                      Builder(builder: (context) {
+                        final rawValues = dailyData.values.toList();
+                        final interval = _niceInterval(rawValues);
+                        final maxY = _getMaxBarValue(rawValues, interval);
+                        final minY = _getMinBarValue(rawValues, interval);
+
+                        return Container(
+                          padding: const EdgeInsets.fromLTRB(4, 14, 14, 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.035),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: kBorder),
                           ),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            height: 200,
+                          child: SizedBox(
+                            height: 190,
                             child: BarChart(
                               BarChartData(
+                                backgroundColor: Colors.transparent,
                                 alignment: BarChartAlignment.spaceAround,
-                                maxY: _getMaxBarValue(dailyData.values.toList()),
-                                minY: _getMinBarValue(dailyData.values.toList()),
+                                maxY: maxY,
+                                minY: minY,
                                 barTouchData: BarTouchData(
                                   enabled: true,
                                   touchTooltipData: BarTouchTooltipData(
-                                    getTooltipColor: (group) =>
-                                    const Color(0xFF1E293B),
+                                    getTooltipColor: (group) => kSurface,
                                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                                       final value = rod.toY;
                                       final sign = value >= 0 ? '+' : '';
                                       return BarTooltipItem(
                                         '$sign${_formatMoney(value.abs())} ₸',
-                                        const TextStyle(
-                                            color: Colors.white, fontSize: 12),
+                                        const TextStyle(color: Colors.white, fontSize: 12),
                                       );
                                     },
                                   ),
@@ -234,28 +224,19 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                   leftTitles: AxisTitles(
                                     sideTitles: SideTitles(
                                       showTitles: true,
-                                      reservedSize: 36,
+                                      reservedSize: 34,
+                                      interval: interval,
                                       getTitlesWidget: (value, meta) {
-                                        if (value == 0) {
-                                          return const Text('0',
-                                              style: TextStyle(
-                                                  fontSize: 10,
-                                                  color: Colors.grey));
-                                        }
-                                        final abs = value.abs();
-                                        if (abs >= 1000) {
-                                          return Text(
-                                            '${(abs / 1000).toStringAsFixed(0)}к',
-                                            style: const TextStyle(
-                                                fontSize: 10,
-                                                color: Colors.grey),
-                                          );
-                                        }
-                                        return Text(
-                                          abs.toStringAsFixed(0),
-                                          style: const TextStyle(
-                                              fontSize: 10,
-                                              color: Colors.grey),
+                                        return Padding(
+                                          padding: const EdgeInsets.only(right: 4),
+                                          child: SizedBox(
+                                            width: 30,
+                                            child: Text(
+                                              _compactAxisLabel(value),
+                                              textAlign: TextAlign.right,
+                                              style: appBody(fontSize: 9.5, color: kTextMuted),
+                                            ),
+                                          ),
                                         );
                                       },
                                     ),
@@ -263,7 +244,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                   bottomTitles: AxisTitles(
                                     sideTitles: SideTitles(
                                       showTitles: true,
-                                      reservedSize: 28,
+                                      reservedSize: 26,
                                       getTitlesWidget: (value, meta) {
                                         final index = value.toInt();
                                         if (index < 0 || index >= dailyData.length) {
@@ -271,10 +252,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                         }
                                         final date = dailyData.keys.elementAt(index);
                                         final label = '${date.day}.${date.month}';
-                                        return Text(label,
-                                            style: const TextStyle(
-                                                fontSize: 11,
-                                                color: Colors.grey));
+                                        return Padding(
+                                          padding: const EdgeInsets.only(top: 4),
+                                          child: Text(label,
+                                              style: appBody(fontSize: 10, color: kTextMuted)),
+                                        );
                                       },
                                     ),
                                   ),
@@ -283,9 +265,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 gridData: FlGridData(
                                   show: true,
                                   drawVerticalLine: false,
-                                  horizontalInterval: 5000,
+                                  horizontalInterval: interval,
                                   getDrawingHorizontalLine: (value) => FlLine(
-                                    color: Colors.grey.shade100,
+                                    color: value == 0
+                                        ? Colors.white.withOpacity(0.16)
+                                        : kAccent.withOpacity(0.09),
                                     strokeWidth: 1,
                                   ),
                                 ),
@@ -293,16 +277,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
+                        );
+                      }),
+                    ],
+                  ),
+                ),
               ],
-            );
-          },
-        ),
-      ),
+            ],
+          ],
+        );
+      },
     );
   }
 
@@ -310,8 +294,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: kBorder),
       ),
       child: Row(
         children: TimeFilter.values.map((filter) {
@@ -338,23 +323,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.white : Colors.transparent,
+                gradient: isSelected ? kAccentGradient : null,
                 borderRadius: BorderRadius.circular(8),
-                boxShadow: isSelected
-                    ? [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 4,
-                  ),
-                ]
-                    : [],
               ),
               child: Text(
                 label,
-                style: TextStyle(
+                style: appBody(
                   fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected ? const Color(0xFF1E293B) : Colors.grey.shade600,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? Colors.white : kTextMuted,
                 ),
               ),
             ),
@@ -364,20 +341,56 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  double _getMaxBarValue(List<double> values) {
-    if (values.isEmpty) return 1000;
-    final max = values.reduce((a, b) => a > b ? a : b);
-    final min = values.reduce((a, b) => a < b ? a : b);
-    final range = max - min;
-    if (range == 0) return max + 1000;
-    return max + range * 0.2;
+  double _niceInterval(List<double> values) {
+    final maxAbs = values.isEmpty
+        ? 0.0
+        : values.map((v) => v.abs()).reduce((a, b) => a > b ? a : b);
+    final target = (maxAbs <= 0 ? 5000 : maxAbs) / 4;
+    final magnitude =
+    math.pow(10, (math.log(target) / math.ln10).floor()).toDouble();
+    final residual = target / magnitude;
+    double niceResidual;
+    if (residual < 1.5) {
+      niceResidual = 1;
+    } else if (residual < 3) {
+      niceResidual = 2;
+    } else if (residual < 7) {
+      niceResidual = 5;
+    } else {
+      niceResidual = 10;
+    }
+    return niceResidual * magnitude;
   }
 
-  double _getMinBarValue(List<double> values) {
+  double _getMaxBarValue(List<double> values, double interval) {
+    if (values.isEmpty) return interval;
+    final max = values.reduce((a, b) => a > b ? a : b);
+    if (max <= 0) return interval;
+    var top = (max / interval).ceil() * interval;
+    if (top <= max) top += interval;
+    return top;
+  }
+
+  double _getMinBarValue(List<double> values, double interval) {
     if (values.isEmpty) return 0;
     final min = values.reduce((a, b) => a < b ? a : b);
     if (min >= 0) return 0;
-    return min - 200;
+    var bottom = (min / interval).floor() * interval;
+    if (bottom >= min) bottom -= interval;
+    return bottom;
+  }
+
+  String _compactAxisLabel(double value) {
+    if (value == 0) return '0';
+    final abs = value.abs();
+    final sign = value < 0 ? '-' : '';
+    if (abs >= 1000000) {
+      return '$sign${(abs / 1000000).toStringAsFixed(abs % 1000000 == 0 ? 0 : 1)}М';
+    }
+    if (abs >= 1000) {
+      return '$sign${(abs / 1000).toStringAsFixed(0)}к';
+    }
+    return '$sign${abs.toStringAsFixed(0)}';
   }
 
   List<BarChartGroupData> _buildBarGroups(Map<DateTime, double> dailyData) {
@@ -392,7 +405,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         barRods: [
           BarChartRodData(
             toY: value.abs(),
-            color: isPositive ? const Color(0xFF34C471) : const Color(0xFFE05B49),
+            color: isPositive ? kGreen : kClay,
             width: 14,
             borderRadius: BorderRadius.circular(4),
           ),
@@ -403,7 +416,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 }
 
 // -----------------------------------------------------------------------------
-// ТҮЗЕТІЛГЕН ЖӘНЕ ҚАУІПСІЗ ДИАГРАММА ВИДЖЕТІ
+// ИНТЕРАКТИВНАЯ ДИАГРАММА ПО КАТЕГОРИЯМ
 // -----------------------------------------------------------------------------
 class _InteractiveCategoryExpenses extends StatefulWidget {
   final Map<String, double> categoryExpenses;
@@ -432,28 +445,15 @@ class _InteractiveCategoryExpensesState extends State<_InteractiveCategoryExpens
 
     final hasExpenses = widget.totalExpense > 0 && entries.isNotEmpty;
 
-    return Container(
+    return GlassCard(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      radius: 24,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Шығындар санаты бойынша',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF1E293B),
-            ),
+            style: appBody(fontSize: 16, fontWeight: FontWeight.w700, color: kTextPrimary),
           ),
           const SizedBox(height: 20),
 
@@ -463,12 +463,11 @@ class _InteractiveCategoryExpensesState extends State<_InteractiveCategoryExpens
               child: Center(
                 child: Column(
                   children: [
-                    Icon(Icons.monetization_on_outlined,
-                        size: 48, color: Colors.grey.shade300),
+                    const Icon(Icons.monetization_on_outlined, size: 48, color: kTextMuted),
                     const SizedBox(height: 8),
                     Text(
                       'Бұл мерзімде шығындар тіркелмеген',
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                      style: appBody(color: kTextMuted, fontSize: 13),
                     ),
                   ],
                 ),
@@ -510,8 +509,8 @@ class _InteractiveCategoryExpensesState extends State<_InteractiveCategoryExpens
               ),
             ),
             const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 12),
+            Container(height: 1, color: Colors.white.withOpacity(0.08)),
+            const SizedBox(height: 16),
             ..._buildCategoryList(entries),
           ],
         ],
@@ -558,27 +557,20 @@ class _InteractiveCategoryExpensesState extends State<_InteractiveCategoryExpens
                     Container(
                       width: 10,
                       height: 10,
-                      decoration:
-                      BoxDecoration(color: color, shape: BoxShape.circle),
+                      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
                     ),
                     const SizedBox(width: 10),
                     Text(
                       mapEntry.key,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: Color(0xFF1E293B),
-                      ),
+                      style: appBody(
+                          fontWeight: FontWeight.w600, fontSize: 14, color: kTextPrimary),
                     ),
                   ],
                 ),
                 Text(
                   '${widget.formatMoney(mapEntry.value)} ₸ (${(percent * 100).toStringAsFixed(1)}%)',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                    color: Colors.grey.shade700,
-                  ),
+                  style: appBody(
+                      fontWeight: FontWeight.w600, fontSize: 13, color: kTextSecondary),
                 ),
               ],
             ),
@@ -587,7 +579,7 @@ class _InteractiveCategoryExpensesState extends State<_InteractiveCategoryExpens
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: percent,
-                backgroundColor: Colors.grey.shade100,
+                backgroundColor: Colors.white.withOpacity(0.06),
                 color: color,
                 minHeight: 6,
               ),
@@ -615,19 +607,9 @@ class _SummaryRow extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Container(
+          child: GlassCard(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+            radius: 20,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -635,32 +617,19 @@ class _SummaryRow extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF34C471).withOpacity(0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.north_east,
-                          color: Color(0xFF34C471), size: 16),
+                      decoration: const BoxDecoration(color: kGreenBg, shape: BoxShape.circle),
+                      child: const Icon(Icons.north_east, color: kGreen, size: 16),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      'Табыс',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    Text('Табыс',
+                        style: appBody(
+                            color: kTextSecondary, fontSize: 13, fontWeight: FontWeight.w500)),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Text(
                   '+${formatMoney(income)} ₸',
-                  style: const TextStyle(
-                    color: Color(0xFF34C471),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 17,
-                  ),
+                  style: appBody(color: kGreen, fontWeight: FontWeight.w700, fontSize: 17),
                 ),
               ],
             ),
@@ -668,19 +637,9 @@ class _SummaryRow extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Container(
+          child: GlassCard(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+            radius: 20,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -688,32 +647,19 @@ class _SummaryRow extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE05B49).withOpacity(0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.south_east,
-                          color: Color(0xFFE05B49), size: 16),
+                      decoration: const BoxDecoration(color: kClayBg, shape: BoxShape.circle),
+                      child: const Icon(Icons.south_east, color: kClay, size: 16),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      'Шығын',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    Text('Шығын',
+                        style: appBody(
+                            color: kTextSecondary, fontSize: 13, fontWeight: FontWeight.w500)),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Text(
                   '-${formatMoney(expense)} ₸',
-                  style: const TextStyle(
-                    color: Color(0xFFE05B49),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 17,
-                  ),
+                  style: appBody(color: kClay, fontWeight: FontWeight.w700, fontSize: 17),
                 ),
               ],
             ),

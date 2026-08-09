@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -55,7 +56,10 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+        SnackBar(
+          content: Text(message),
+          backgroundColor: kClay,
+        ),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -65,93 +69,127 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Icon(Icons.account_balance_wallet,
-                      size: 80, color: Colors.deepPurple),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Кіру',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Email енгізіңіз';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Дұрыс email енгізіңіз';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Құпия сөз',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility),
-                        onPressed: () {
-                          setState(() => _obscurePassword = !_obscurePassword);
-                        },
+      backgroundColor: const Color(0xFF03050A),
+      body: AppBackground(
+        safeArea: false,
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 84,
+                        height: 84,
+                        decoration: BoxDecoration(
+                          gradient: kAccentGradient,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: kAccent.withOpacity(0.4),
+                              blurRadius: 30,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.account_balance_wallet_rounded,
+                            size: 38, color: Colors.white),
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.length < 6) {
-                        return 'Кемінде 6 таңба болу керек';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: _isLoading ? null : _login,
-                    style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16)),
-                    child: _isLoading
-                        ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+                    const SizedBox(height: 22),
+                    Text(
+                      'Кіру',
+                      textAlign: TextAlign.center,
+                      style: appDisplay(fontSize: 28, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Қаржыңызды бақылауды жалғастырыңыз',
+                      textAlign: TextAlign.center,
+                      style: appBody(color: kTextMuted, fontSize: 13.5),
+                    ),
+                    const SizedBox(height: 30),
+                    GlassCard(
+                      padding: const EdgeInsets.all(22),
+                      radius: 26,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            style: appBody(fontSize: 14.5),
+                            decoration: appFieldDecoration(
+                              'Email',
+                              prefixIcon: const Icon(Icons.email_outlined),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Email енгізіңіз';
+                              }
+                              if (!value.contains('@')) {
+                                return 'Дұрыс email енгізіңіз';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            style: appBody(fontSize: 14.5),
+                            decoration: appFieldDecoration(
+                              'Құпия сөз',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: kTextSecondary,
+                                ),
+                                onPressed: () {
+                                  setState(
+                                          () => _obscurePassword = !_obscurePassword);
+                                },
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.length < 6) {
+                                return 'Кемінде 6 таңба болу керек';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 24),
+                          GradientButton(
+                            label: 'Кіру',
+                            loading: _isLoading,
+                            onPressed: _isLoading ? null : _login,
+                          ),
+                        ],
                       ),
-                    )
-                        : const Text('Кіру'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () {
-                      Navigator.pushNamed(context, '/register');
-                    },
-                    child: const Text('Аккаунтыңыз жоқ па? Тіркелу'),
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                        Navigator.pushNamed(context, '/register');
+                      },
+                      child: Text(
+                        'Аккаунтыңыз жоқ па? Тіркелу',
+                        style: appBody(
+                            color: kAccentLight, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
