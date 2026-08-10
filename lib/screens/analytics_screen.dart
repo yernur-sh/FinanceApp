@@ -106,22 +106,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           }
         }
 
-        final dailyData = <DateTime, double>{};
-        if (_selectedFilter == TimeFilter.week) {
-          for (int i = 6; i >= 0; i--) {
-            final day = DateTime(range.end.year, range.end.month, range.end.day - i);
-            dailyData[DateTime(day.year, day.month, day.day)] = 0.0;
-          }
-          for (final t in transactions) {
-            final day = DateTime(t.date.year, t.date.month, t.date.day);
-            if (dailyData.containsKey(day)) {
-              if (t.type == TransactionType.income) {
-                dailyData[day] = (dailyData[day] ?? 0) + t.amount;
-              } else {
-                dailyData[day] = (dailyData[day] ?? 0) - t.amount;
-              }
-            }
-          }
+        final sortedTx = List<TransactionModel>.from(transactions)
+          ..sort((a, b) => a.date.compareTo(b.date));
+        final balancePoints = <MapEntry<DateTime, double>>[];
+        double _running = 0;
+        for (final t in sortedTx) {
+          _running += t.type == TransactionType.income ? t.amount : -t.amount;
+          balancePoints.add(MapEntry(t.date, _running));
         }
 
         return ListView(
@@ -166,7 +157,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 formatMoney: _formatMoney,
               ),
 
-              if (_selectedFilter == TimeFilter.week) ...[
+              if (balancePoints.length >= 2) ...[
                 const SizedBox(height: 24),
                 GlassCard(
                   padding: const EdgeInsets.all(20),
@@ -175,16 +166,31 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Күнделікті Баланс Динамикасы',
+                        'Баланс динамикасы',
                         style: appBody(
                             fontSize: 16, fontWeight: FontWeight.w700, color: kTextPrimary),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Әр транзакциядан кейінгі өзгеріс',
+                        style: appBody(fontSize: 12, color: kTextMuted),
+                      ),
+                      const SizedBox(height: 18),
                       Builder(builder: (context) {
-                        final rawValues = dailyData.values.toList();
-                        final interval = _niceInterval(rawValues);
-                        final maxY = _getMaxBarValue(rawValues, interval);
-                        final minY = _getMinBarValue(rawValues, interval);
+                        final values = balancePoints.map((e) => e.value).toList();
+                        final interval = _niceInterval(values);
+                        final maxY = _getMaxBarValue(values, interval);
+                        final minY = _getMinLineValue(values, interval);
+
+                        final spots = <FlSpot>[
+                          for (int i = 0; i < balancePoints.length; i++)
+                            FlSpot(i.toDouble(), balancePoints[i].value),
+                        ];
+
+                        // Х осінде тым көп жазу болмас үшін бірнеше күнді ғана көрсетеміз
+                        final labelCount = balancePoints.length <= 5 ? balancePoints.length : 4;
+                        final labelStep =
+                        ((balancePoints.length - 1) / (labelCount - 1)).ceil().clamp(1, 1000);
 
                         return Container(
                           padding: const EdgeInsets.fromLTRB(4, 14, 14, 4),
@@ -195,25 +201,51 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           ),
                           child: SizedBox(
                             height: 190,
-                            child: BarChart(
-                              BarChartData(
-                                backgroundColor: Colors.transparent,
-                                alignment: BarChartAlignment.spaceAround,
-                                maxY: maxY,
+                            child: LineChart(
+                              LineChartData(
+                                minX: 0,
+                                maxX: (balancePoints.length - 1).toDouble(),
                                 minY: minY,
-                                barTouchData: BarTouchData(
-                                  enabled: true,
-                                  touchTooltipData: BarTouchTooltipData(
-                                    getTooltipColor: (group) => kSurface,
-                                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                                      final value = rod.toY;
-                                      final sign = value >= 0 ? '+' : '';
-                                      return BarTooltipItem(
-                                        '$sign${_formatMoney(value.abs())} ₸',
-                                        const TextStyle(color: Colors.white, fontSize: 12),
-                                      );
+                                maxY: maxY,
+                                lineTouchData: LineTouchData(
+                                  touchTooltipData: LineTouchTooltipData(
+                                    getTooltipColor: (spot) => kSurface,
+                                    tooltipBorder: const BorderSide(color: kBorder),
+                                    getTooltipItems: (touchedSpots) {
+                                      return touchedSpots.map((s) {
+                                        final idx = s.x.round().clamp(0, balancePoints.length - 1);
+                                        final date = balancePoints[idx].key;
+                                        return LineTooltipItem(
+                                          '${_formatMoney(s.y)} ₸\n${_shortDate(date)}',
+                                          const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        );
+                                      }).toList();
                                     },
                                   ),
+                                  getTouchedSpotIndicator: (barData, indicators) {
+                                    return indicators.map((i) {
+                                      return TouchedSpotIndicatorData(
+                                        FlLine(
+                                          color: kGreen.withOpacity(0.5),
+                                          strokeWidth: 1,
+                                          dashArray: [4, 4],
+                                        ),
+                                        FlDotData(
+                                          getDotPainter: (spot, percent, bar, index) =>
+                                              FlDotCirclePainter(
+                                                radius: 4,
+                                                color: kGreen,
+                                                strokeWidth: 2,
+                                                strokeColor: Colors.white,
+                                              ),
+                                        ),
+                                      );
+                                    }).toList();
+                                  },
                                 ),
                                 titlesData: FlTitlesData(
                                   show: true,
@@ -245,16 +277,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                     sideTitles: SideTitles(
                                       showTitles: true,
                                       reservedSize: 26,
+                                      interval: 1,
                                       getTitlesWidget: (value, meta) {
-                                        final index = value.toInt();
-                                        if (index < 0 || index >= dailyData.length) {
+                                        final index = value.round();
+                                        if (index < 0 || index >= balancePoints.length) {
                                           return const Text('');
                                         }
-                                        final date = dailyData.keys.elementAt(index);
-                                        final label = '${date.day}.${date.month}';
+                                        if (index % labelStep != 0 &&
+                                            index != balancePoints.length - 1) {
+                                          return const Text('');
+                                        }
+                                        final date = balancePoints[index].key;
                                         return Padding(
                                           padding: const EdgeInsets.only(top: 4),
-                                          child: Text(label,
+                                          child: Text(_shortDate(date),
                                               style: appBody(fontSize: 10, color: kTextMuted)),
                                         );
                                       },
@@ -273,7 +309,35 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                     strokeWidth: 1,
                                   ),
                                 ),
-                                barGroups: _buildBarGroups(dailyData),
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: spots,
+                                    isCurved: false,
+                                    color: kGreen,
+                                    barWidth: 2.5,
+                                    dotData: FlDotData(
+                                      show: true,
+                                      getDotPainter: (spot, percent, bar, index) =>
+                                          FlDotCirclePainter(
+                                            radius: 3.5,
+                                            color: kGreen,
+                                            strokeWidth: 2,
+                                            strokeColor: const Color(0xFF0E1530),
+                                          ),
+                                    ),
+                                    belowBarData: BarAreaData(
+                                      show: true,
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          kGreen.withOpacity(0.28),
+                                          kGreen.withOpacity(0.0),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -371,15 +435,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return top;
   }
 
-  double _getMinBarValue(List<double> values, double interval) {
-    if (values.isEmpty) return 0;
-    final min = values.reduce((a, b) => a < b ? a : b);
-    if (min >= 0) return 0;
-    var bottom = (min / interval).floor() * interval;
-    if (bottom >= min) bottom -= interval;
-    return bottom;
-  }
-
   String _compactAxisLabel(double value) {
     if (value == 0) return '0';
     final abs = value.abs();
@@ -393,26 +448,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return '$sign${abs.toStringAsFixed(0)}';
   }
 
-  List<BarChartGroupData> _buildBarGroups(Map<DateTime, double> dailyData) {
-    final entries = dailyData.entries.toList();
-    return entries.asMap().entries.map((entry) {
-      final index = entry.key;
-      final value = entry.value.value;
-      final isPositive = value >= 0;
-
-      return BarChartGroupData(
-        x: index,
-        barRods: [
-          BarChartRodData(
-            toY: value.abs(),
-            color: isPositive ? kGreen : kClay,
-            width: 14,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ],
-      );
-    }).toList();
+  double _getMinLineValue(List<double> values, double interval) {
+    if (values.isEmpty) return 0;
+    final min = values.reduce((a, b) => a < b ? a : b);
+    if (min >= 0) return 0;
+    var bottom = (min / interval).floor() * interval;
+    if (bottom >= min) bottom -= interval;
+    return bottom;
   }
+
+  String _shortDate(DateTime date) => '${date.day}.${date.month}';
 }
 
 // -----------------------------------------------------------------------------
