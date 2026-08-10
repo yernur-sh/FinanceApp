@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/goal_model.dart';
 import '../theme/app_theme.dart';
+import '../services/notification_service.dart';
 
 class GoalsScreen extends StatefulWidget {
   const GoalsScreen({super.key});
@@ -31,8 +32,19 @@ class _GoalsScreenState extends State<GoalsScreen> {
         .where('userId', isEqualTo: _userId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) =>
-            snap.docs.map((doc) => GoalModel.fromDoc(doc)).toList());
+        .map((snap) {
+      final goals = snap.docs.map((doc) => GoalModel.fromDoc(doc)).toList();
+      for (final goal in goals) {
+        if (goal.progress >= 1) {
+          NotificationService.notifyGoalCompleted(
+            userId: _userId!,
+            goalId: goal.id,
+            goalTitle: goal.title,
+          );
+        }
+      }
+      return goals;
+    });
   }
 
   String _formatMoney(double value) {
@@ -54,6 +66,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
 
     final relatedTransactions = await _firestore
         .collection('transactions')
+        .where('userId', isEqualTo: _userId)
         .where('goalId', isEqualTo: goalId)
         .get();
 
@@ -284,11 +297,11 @@ class _GoalsScreenState extends State<GoalsScreen> {
               )
             else
               ...goals.map((g) => _GoalCard(
-                    goal: g,
-                    formatMoney: _formatMoney,
-                    formatDate: _formatDate,
-                    onDelete: () => _deleteGoal(g.id),
-                  )),
+                goal: g,
+                formatMoney: _formatMoney,
+                formatDate: _formatDate,
+                onDelete: () => _deleteGoal(g.id),
+              )),
           ],
         );
       },

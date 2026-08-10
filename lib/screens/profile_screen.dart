@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_theme.dart';
+import 'edit_profile_screen.dart';
+import 'security_screen.dart';
+import 'help_support_screen.dart';
+import 'about_app_screen.dart';
+import 'notifications_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   final bool embedded;
@@ -55,14 +60,24 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    final rawName = user?.displayName ?? '';
-    final email = user?.email ?? 'email@example.com';
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.userChanges(),
+      initialData: FirebaseAuth.instance.currentUser,
+      builder: (context, snapshot) {
+        final user = snapshot.data;
+        final rawName = user?.displayName ?? '';
+        final email = user?.email ?? 'email@example.com';
 
-    final displayName = rawName.isNotEmpty
-        ? rawName
-        : (email.contains('@') ? email.split('@')[0] : 'Пайдаланушы');
+        final displayName = rawName.isNotEmpty
+            ? rawName
+            : (email.contains('@') ? email.split('@')[0] : 'Пайдаланушы');
 
+        return _buildContent(context, displayName, email);
+      },
+    );
+  }
+
+  Widget _buildContent(BuildContext context, String displayName, String email) {
     final content = ListView(
       padding: const EdgeInsets.fromLTRB(20, 22, 20, 120),
       children: [
@@ -116,19 +131,28 @@ class ProfileScreen extends StatelessWidget {
             icon: Icons.person_outline_rounded,
             title: 'Деректерді өңдеу',
             subtitle: 'Аты-жөн, профиль суреті',
-            onTap: () {},
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+            ),
           ),
           _ProfileOptionTile(
             icon: Icons.notifications_none_rounded,
             title: 'Хабарландырулар',
             subtitle: 'Бюджет лимиті ескертулері',
-            onTap: () {},
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+            ),
           ),
           _ProfileOptionTile(
             icon: Icons.lock_outline_rounded,
             title: 'Қауіпсіздік',
             subtitle: 'Құпия сөзді өзгерту',
-            onTap: () {},
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SecurityScreen()),
+            ),
             isLast: true,
           ),
         ]),
@@ -141,13 +165,19 @@ class ProfileScreen extends StatelessWidget {
           _ProfileOptionTile(
             icon: Icons.help_outline_rounded,
             title: 'Көмек және қолдау',
-            onTap: () {},
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const HelpSupportScreen()),
+            ),
           ),
           _ProfileOptionTile(
             icon: Icons.info_outline_rounded,
             title: 'Қолданба туралы',
             subtitle: 'Нұсқасы v1.0.0',
-            onTap: () {},
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AboutAppScreen()),
+            ),
             isLast: true,
           ),
         ]),
@@ -187,7 +217,7 @@ class ProfileScreen extends StatelessWidget {
             style: appBody(fontWeight: FontWeight.w700, fontSize: 20)),
         centerTitle: true,
       ),
-      body: AppBackground(child: content),
+      body: AppBackground(safeArea: false, child: SafeArea(child: content)),
     );
   }
 
@@ -251,9 +281,9 @@ class _ProfileOptionTile extends StatelessWidget {
         ),
         subtitle: subtitle != null
             ? Text(
-                subtitle!,
-                style: appBody(fontSize: 12, color: kTextMuted),
-              )
+          subtitle!,
+          style: appBody(fontSize: 12, color: kTextMuted),
+        )
             : null,
         trailing: const Icon(
           Icons.chevron_right_rounded,

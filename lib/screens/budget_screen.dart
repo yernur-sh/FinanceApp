@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/budget_model.dart';
 import '../theme/app_theme.dart';
+import '../services/notification_service.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -271,7 +272,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
               )
             else
               ...budgets.map(
-                (budget) => _BudgetCard(
+                    (budget) => _BudgetCard(
                   budget: budget,
                   formatMoney: _formatMoney,
                   getSpent: () => _getSpentForCategory(
@@ -280,6 +281,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                     budget.year,
                   ),
                   onDelete: () => _deleteBudgetCascade(budget.id, budget.category),
+                  userId: _userId!,
                 ),
               ),
           ],
@@ -294,12 +296,14 @@ class _BudgetCard extends StatelessWidget {
   final String Function(double) formatMoney;
   final Future<double> Function() getSpent;
   final VoidCallback onDelete;
+  final String userId;
 
   const _BudgetCard({
     required this.budget,
     required this.formatMoney,
     required this.getSpent,
     required this.onDelete,
+    required this.userId,
   });
 
   @override
@@ -314,6 +318,16 @@ class _BudgetCard extends StatelessWidget {
             : (spent / budget.limit).clamp(0.0, 1.0);
         final percent = (progress * 100).toInt();
         final isOver = remaining < 0;
+
+        if (isOver) {
+          NotificationService.notifyBudgetExceeded(
+            userId: userId,
+            budgetId: budget.id,
+            category: budget.category,
+            month: budget.month,
+            year: budget.year,
+          );
+        }
 
         return Container(
           margin: const EdgeInsets.only(bottom: 14),
