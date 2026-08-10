@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -9,8 +10,10 @@ import 'profile_screen.dart';
 import 'goals_screen.dart';
 import 'analytics_screen.dart';
 import 'budget_screen.dart';
+import 'notifications_screen.dart';
 import '../models/goal_model.dart';
 import '../models/budget_model.dart';
+import '../services/notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,12 +27,25 @@ class _HomeScreenState extends State<HomeScreen> {
   final _firestore = FirebaseFirestore.instance;
   late final Stream<List<TransactionModel>> _transactionsStream;
 
+  StreamSubscription<QuerySnapshot>? _goalsWatchSub;
+  StreamSubscription<QuerySnapshot>? _transWatchSub;
+  StreamSubscription<QuerySnapshot>? _budgetsWatchSub;
+
   String? get _userId => FirebaseAuth.instance.currentUser?.uid;
 
   @override
   void initState() {
     super.initState();
     _transactionsStream = _buildTransactionsStream();
+    _startBackgroundWatchers();
+  }
+
+  @override
+  void dispose() {
+    _goalsWatchSub?.cancel();
+    _transWatchSub?.cancel();
+    _budgetsWatchSub?.cancel();
+    super.dispose();
   }
 
   Stream<List<TransactionModel>> _buildTransactionsStream() {
@@ -41,6 +57,118 @@ class _HomeScreenState extends State<HomeScreen> {
         .snapshots()
         .map((snap) =>
         snap.docs.map((doc) => TransactionModel.fromDoc(doc)).toList());
+  }
+
+  // ───────────────────────── Background watchers ─────────────────────────
+  // Бұл тыңдаушылар HomeScreen деңгейінде тұрады, сондықтан пайдаланушы
+  // Мақсаттар/Бюджет бетін ашпаса да іске қосылып тұрады.
+
+  void _startBackgroundWatchers() {
+    if (_userId == null) return;
+
+    // Мақсат толық жиналғанда бақылайды
+    _goalsWatchSub = _firestore
+        .collection('goals')
+        .where('userId', isEqualTo: _userId)
+        .snapshots()
+        .listen((snap) {
+      for (final doc in snap.docs) {
+        final goal = GoalModel.fromDoc(doc);
+        if (goal.progress >= 1) {
+          NotificationService.notifyGoalCompleted(
+            userId: _userId!,
+            goalId: goal.id,
+            goalTitle: goal.title,
+          );
+        }
+      }
+    });
+
+    // Кез келген транзакция өзгергенде бюджеттерді қайта тексереді
+    _transWatchSub = _firestore
+        .collection('transactions')
+        .where('userId', isEqualTo: _userId)
+        .snapshots()
+        .listen((_) => _checkBudgets());
+
+    // Бюджет қосылса/өзгерсе де қайта тексереді
+    final now = DateTime.now();
+    _budgetsWatchSub = _firestore
+        .collection('budgets')
+        .where('userId', isEqualTo: _userId)
+        .where('month', isEqualTo: now.month)
+        .where('year', isEqualTo: now.year)
+        .snapshots()
+        .listen((_) => _checkBudgets());
+  }
+
+  Future<void> _checkBudgets() async {
+    if (_userId == null) return;
+    final now = DateTime.now();
+
+    final budgetsSnap = await _firestore
+        .collection('budgets')
+        .where('userId', isEqualTo: _userId)
+        .where('month', isEqualTo: now.month)
+        .where('year', isEqualTo: now.year)
+        .get();
+
+    for (final doc in budgetsSnap.docs) {
+      final budget = BudgetModel.fromDoc(doc);
+      final spent = await _getSpentForCategory(
+        budget.category,
+        budget.month,
+        budget.year,
+      );
+      if (spent > budget.limit) {
+        NotificationService.notifyBudgetExceeded(
+          userId: _userId!,
+          budgetId: budget.id,
+          category: budget.category,
+          month: budget.month,
+          year: budget.year,
+        );
+      }
+    }
+  }
+
+  Future<double> _getSpentForCategory(
+      String category,
+      int month,
+      int year,
+      ) async {
+    if (_userId == null) return 0.0;
+
+    final start = DateTime(year, month, 1);
+    final end = DateTime(year, month + 1, 1);
+
+    final snapshot = await _firestore
+        .collection('transactions')
+        .where('userId', isEqualTo: _userId)
+        .where('category', isEqualTo: category)
+        .get();
+
+    double total = 0.0;
+
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+      final type = data['type']?.toString();
+      final createdAtTimestamp = data['createdAt'] as Timestamp?;
+
+      if (type == 'expense' || type == 'TransactionType.expense') {
+        if (createdAtTimestamp != null) {
+          final date = createdAtTimestamp.toDate();
+          if (date.isAfter(start.subtract(const Duration(seconds: 1))) &&
+              date.isBefore(end)) {
+            total += (data['amount'] as num).toDouble();
+          }
+        } else {
+          total += (data['amount'] as num).toDouble();
+        }
+      }
+    }
+
+    return total;
   }
 
   Future<void> _deleteTransaction(TransactionModel transaction) async {
@@ -528,17 +656,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: kBorder),
-                  ),
-                  child: const Icon(Icons.notifications_none_rounded,
-                      color: kTextSecondary, size: 21),
-                ),
+                _NotificationBell(userId: _userId, firestore: _firestore),
               ],
             ),
             const SizedBox(height: 20),
@@ -594,6 +712,71 @@ class _HomeScreenState extends State<HomeScreen> {
                 onDelete: () => _deleteTransaction(t),
               )),
           ],
+        );
+      },
+    );
+  }
+}
+
+// ───────────────────────── Notification bell ─────────────────────────
+class _NotificationBell extends StatelessWidget {
+  final String? userId;
+  final FirebaseFirestore firestore;
+
+  const _NotificationBell({required this.userId, required this.firestore});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: userId == null
+          ? null
+          : firestore
+          .collection('notifications')
+          .where('userId', isEqualTo: userId)
+          .where('isRead', isEqualTo: false)
+          .snapshots(),
+      builder: (context, notifSnapshot) {
+        final hasUnread = (notifSnapshot.data?.docs.length ?? 0) > 0;
+        return GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const NotificationsScreen(),
+            ),
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: kBorder),
+                ),
+                child: const Icon(Icons.notifications_none_rounded,
+                    color: kTextSecondary, size: 21),
+              ),
+              if (hasUnread)
+                Positioned(
+                  top: 2,
+                  right: 2,
+                  child: Container(
+                    width: 11,
+                    height: 11,
+                    decoration: BoxDecoration(
+                      color: kClay,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF03050A),
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         );
       },
     );
