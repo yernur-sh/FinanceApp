@@ -288,26 +288,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       TextField(
                         controller: titleController,
                         style: appBody(fontSize: 14.5),
-                        decoration: appFieldDecoration(
-                            l10n.incomeTitleFieldHint),
+                        decoration: appFieldDecoration(l10n.incomeTitleFieldHint),
                       ),
                       const SizedBox(height: 12),
                     ],
+
                     TextField(
                       controller: amountController,
                       keyboardType: TextInputType.number,
                       style: appBody(fontSize: 14.5),
-                      decoration:
-                      appFieldDecoration(l10n.amountFieldLabel),
+                      decoration: appFieldDecoration(l10n.amountFieldLabel),
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: noteController,
-                      maxLines: 2,
-                      style: appBody(fontSize: 14.5),
-                      decoration: appFieldDecoration(l10n.commentFieldLabel,
-                          hint: l10n.commentFieldHint),
-                    ),
+
+                    if (selectedType == TransactionType.expense) ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: noteController,
+                        maxLines: 2,
+                        style: appBody(fontSize: 14.5),
+                        decoration: appFieldDecoration(l10n.commentFieldLabel, hint: l10n.commentFieldHint),
+                      ),
+                    ],
                     if (selectedType == TransactionType.expense) ...[
                       const SizedBox(height: 20),
                       Row(
@@ -848,7 +849,7 @@ class _GlassBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = _items(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       child: Container(
         height: 78,
         padding: const EdgeInsets.symmetric(horizontal: 8),
