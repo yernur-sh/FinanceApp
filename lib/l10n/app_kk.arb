@@ -1,0 +1,256 @@
+{
+  "@@locale": "kk",
+
+  "appTitle": "Жеке Қаржылар",
+  "@appTitle": {
+    "description": "App name shown on the home screen header"
+  },
+  "income": "Табыс",
+  "expense": "Шығын",
+  "category": "Санат",
+  "loginRequired": "Кіру қажет",
+
+  "errorWithMessage": "Қате: {message}",
+  "@errorWithMessage": {
+    "description": "Generic error text with a message from an exception",
+    "placeholders": {
+      "message": {"type": "String"}
+    }
+  },
+
+  "fillAllFieldsCorrectly": "Барлық өрісті дұрыс толтырыңыз",
+  "otherCategory": "Басқа",
+  "userNotFound": "Мұндай пайдаланушы табылмады",
+  "wrongPassword": "Құпия сөз қате",
+  "invalidEmail": "Email қате енгізілген",
+  "invalidCredential": "Email немесе құпия сөз қате",
+
+  "loginTitle": "Кіру",
+  "loginSubtitle": "Қаржыңызды бақылауды жалғастырыңыз",
+  "emailLabel": "Email",
+  "emailRequired": "Email енгізіңіз",
+  "emailInvalid": "Дұрыс email енгізіңіз",
+  "passwordLabel": "Құпия сөз",
+  "passwordTooShort": "Кемінде 6 таңба болу керек",
+  "noAccountRegister": "Аккаунтыңыз жоқ па? Тіркелу",
+
+  "logoutTitle": "Жүйеден шығу",
+  "logoutConfirm": "Шын мәнінде аккаунттан шыққыңыз келе ме?",
+  "cancel": "Бас тарту",
+  "logoutAction": "Шығу",
+  "logoutButton": "Аккаунттан шығу",
+  "userFallback": "Пайдаланушы",
+
+  "profileTitle": "Профиль",
+  "personalSettings": "Жеке баптаулар",
+  "editData": "Деректерді өңдеу",
+  "editDataSubtitle": "Аты-жөн, профиль суреті",
+  "notifications": "Хабарландырулар",
+  "notificationsSubtitle": "Ескертулер",
+  "noNotificationsYet": "Әзірге хабарландырулар жоқ",
+  "security": "Қауіпсіздік",
+  "securitySubtitle": "Құпия сөзді өзгерту",
+  "appSection": "Қолданба",
+  "helpSupport": "Көмек және қолдау",
+  "helpAndSupport": "Көмек және қолдау",
+  "aboutApp": "Қолданба туралы",
+
+  "appVersion": "Нұсқасы v{version}",
+  "@appVersion": {
+    "description": "App version label",
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  },
+
+  "passwordChangedSuccess": "Құпия сөз сәтті өзгертілді",
+  "wrongCurrentPassword": "Қазіргі құпия сөз қате",
+  "currentPasswordWrong": "Қазіргі құпия сөз қате",
+  "newPasswordTooWeak": "Жаңа құпия сөз тым әлсіз",
+  "newPasswordWeak": "Жаңа құпия сөз тым әлсіз",
+  "requiresRecentLogin": "Қауіпсіздік үшін қайта кіру қажет. Шығып, қайта кіріңіз",
+  "tooManyRequests": "Тым көп әрекет жасалды. Сәл кейін қайталаңыз",
+  "nonEmailAccountNotice": "Сіздің аккаунтыңыз email/құпия сөз арқылы емес, басқа провайдер арқылы тіркелген. Құпия сөзді осы жерден өзгерту мүмкін емес.",
+  "otherProviderAccountNotice": "Сіздің аккаунтыңыз email/құпия сөз арқылы емес, басқа провайдер арқылы тіркелген. Құпия сөзді осы жерден өзгерту мүмкін емес.",
+
+  "changePassword": "Құпия сөзді өзгерту",
+  "currentPassword": "Қазіргі құпия сөз",
+  "currentPasswordLabel": "Қазіргі құпия сөз",
+  "enterCurrentPassword": "Қазіргі құпия сөзді енгізіңіз",
+  "newPassword": "Жаңа құпия сөз",
+  "newPasswordLabel": "Жаңа құпия сөз",
+  "minSixCharacters": "Кемінде 6 таңба болу керек",
+  "newPasswordMustDiffer": "Жаңа құпия сөз ескісінен өзгеше болуы керек",
+  "confirmNewPassword": "Жаңа құпия сөзді қайталаңыз",
+  "confirmNewPasswordLabel": "Жаңа құпия сөзді қайталаңыз",
+  "passwordsDoNotMatch": "Құпия сөздер сәйкес келмейді",
+  "savePassword": "Құпия сөзді сақтау",
+  "savePasswordButton": "Құпия сөзді сақтау",
+
+  "emailAlreadyInUse": "Бұл email тіркелген",
+  "passwordTooWeak": "Құпия сөз тым әлсіз",
+  "passwordWeak": "Құпия сөз тым әлсіз",
+  "register": "Тіркелу",
+  "registerTitle": "Тіркелу",
+  "createNewAccountSubtitle": "Жаңа аккаунт құрып бастаңыз",
+  "registerSubtitle": "Жаңа аккаунт құрып бастаңыз",
+  "fullName": "Аты-жөні",
+  "fullNameLabel": "Аты-жөні",
+  "enterYourName": "Атыңызды енгізіңіз",
+  "email": "Email",
+  "enterValidEmail": "Дұрыс email енгізіңіз",
+  "password": "Құпия сөз",
+  "confirmPassword": "Құпия сөзді қайталаңыз",
+  "confirmPasswordLabel": "Құпия сөзді қайталаңыз",
+
+  "newGoal": "Жаңа мақсат",
+  "goalNameLabel": "Мақсат атауы",
+  "goalTargetAmountLabel": "Мақсатты сома (₸)",
+  "selectDeadlineOptional": "Мерзімін таңдау (міндетті емес)",
+  "createGoal": "Мақсат құру",
+  "goalsTitle": "Мақсаттар",
+  "activeGoals": "Белсенді мақсаттар",
+  "noGoalsYet": "Әзірге мақсаттар жоқ",
+  "noGoalsYetShort": "Әзірге мақсаттарыңыз жоқ",
+  "addGoalHint": "Жаңа мақсат қосу үшін + батырмасын басыңыз",
+
+  "categorySavings": "Жинақ",
+  "categoryTravel": "Саяхат",
+  "categoryProperty": "Жылжымай мүлік",
+  "categoryOther": "Басқа",
+
+  "goalTargetPrefix": "Мақсат: {amount} ₸",
+  "@goalTargetPrefix": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "goalCollected": "{amount} ₸ жиналды",
+  "@goalCollected": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "newBudget": "Жаңа бюджет",
+  "budgetCategoryHint": "Санат (мыс. Көлік, Тамақ)",
+  "budgetLimitLabel": "Лимит (₸)",
+  "createBudget": "Бюджет құру",
+  "budgetTitle": "Бюджет",
+  "currentMonth": "Ағымдағы ай",
+  "noBudgetsYet": "Әзірге бюджеттер жоқ",
+  "addBudgetHint": "Жаңа бюджет қосу үшін + батырмасын басыңыз",
+
+  "budgetLimitPrefix": "Лимит: {amount} ₸",
+  "@budgetLimitPrefix": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "budgetExceeded": "Асып кетті",
+
+  "budgetRemaining": "{amount} ₸ қалды",
+  "@budgetRemaining": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "budgetSpent": "{amount} ₸ жұмсалды",
+  "@budgetSpent": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "incomeTitleFieldHint": "Табыс атауы (мыс. Жалақы, Премия)",
+  "amountFieldLabel": "Сомасы (₸)",
+  "commentFieldLabel": "Комментарий",
+  "commentFieldHint": "Себеп-салдары",
+  "chooseBudgetCategory": "Бюджет санатынан таңдаңыз",
+  "goalSelected": "Мақсат таңдалды",
+  "noBudgetCategoriesYet": "Әзірге бюджет санаттары жоқ. Алдымен \"Бюджет\" бетінде санат құрыңыз",
+  "addToGoalQuestion": "Мақсатқа қосу керек пе?",
+  "categorySelected": "Санат таңдалды",
+  "addButton": "Қосу",
+  "enterValidAmount": "Соманы дұрыс енгізіңіз",
+  "recentTransactions": "Соңғы транзакциялар",
+  "noTransactions": "Транзакциялар жоқ",
+  "addTransactionHint": "Жаңа жазба қосу үшін жоғарыдағы\nбатырманы басыңыз",
+  "totalBalance": "ЖАЛПЫ БАЛАНС",
+  "incomeMini": "Түсім",
+  "topUp": "Толықтыру",
+  "spend": "Жұмсау",
+  "navHome": "Басты бет",
+  "newTransaction": "Жаңа транзакция",
+
+  "analyticsTitle": "Аналитика",
+  "filterWeek": "Апта",
+  "filterMonth": "Ай",
+  "filterYear": "Жыл",
+  "balanceDynamics": "Баланс динамикасы",
+  "balanceDynamicsSubtitle": "Әр транзакциядан кейінгі өзгеріс",
+  "expensesByCategory": "Шығындар санаты бойынша",
+  "noExpensesInPeriod": "Тандалған уақыт аралығында деректер жоқ",
+  "noExpensesRegisteredInPeriod": "Бұл мерзімде шығындар тіркелмеген",
+
+  "frequentlyAskedQuestions": "Жиі қойылатын сұрақтар",
+  "faqSectionTitle": "Жиі қойылатын сұрақтар",
+  "faqQ1": "Транзакцияны қалай қосамын?",
+  "faqA1": "Басты беттегі \"Толықтыру\" немесе \"Жұмсау\" батырмасын басыңыз, соманы, санатты (қажет болса) және комментарий енгізіп, \"Қосу\" батырмасын басыңыз.",
+  "faqQ2": "Мақсат пен бюджеттің айырмашылығы неде?",
+  "faqA2": "Бюджет — белгілі бір санатқа (мыс. Тамақ) айлық шығын лимитін қоюға көмектеседі. Мақсат — белгілі бір соманы жинауға арналған (мыс. саяхатқа ақша жинау).",
+  "faqQ3": "Транзакцияны өшірсем, бюджет/мақсат саны өзгере ме?",
+  "faqA3": "Иә. Транзакцияны өшіргенде, егер ол мақсатқа байланысты болса — мақсаттың жиналған сомасынан автоматты түрде алынып тасталады.",
+  "faqQ4": "Деректерім қауіпсіз бе?",
+  "faqA4": "Барлық деректер Google Firebase серверлерінде сақталады және тек сіздің аккаунтыңызбен байланысты. Профиль бетіндегі \"Қауіпсіздік\" бөлімінен құпия сөзді кез келген уақытта өзгерте аласыз.",
+  "faqQ5": "Аналитика бетіндегі баланс графигі нені көрсетеді?",
+  "faqA5": "Ол таңдалған кезең ішіндегі әрбір транзакциядан кейінгі жинақталған балансты көрсетеді — әр нүкте бір транзакцияға сәйкес келеді.",
+
+  "editProfile": "Деректерді өңдеу",
+  "editDataSubtitle": "Аты-жөн, профиль суреті",
+  "photoChangeComingSoon": "Профиль суретін өзгерту жақын арада қолжетімді болады",
+  "tapToChangePhoto": "Суретті ауыстыру үшін басыңыз",
+  "contactSupportToChangeEmail": "Email өзгерту үшін қолдау қызметіне хабарласыңыз",
+  "save": "Сақтау",
+  "saveButton": "Сақтау",
+  "couldNotOpenLink": "Сілтемені ашу мүмкін болмады",
+
+  "appName": "Қаржылай сауаттылық",
+  "financialLiteracy": "Қаржылай сауаттылық",
+  "aboutAppDescription": "Бұл қолданба сіздің күнделікті кірістеріңіз бен шығыстарыңызды бақылауға, бюджет орнатуға және қаржылай мақсаттарға жетуге көмектеседі. Барлық деректеріңіз қауіпсіз түрде сақталады және тек сізге ғана қолжетімді.",
+  "termsOfUse": "Пайдалану шарттары",
+  "privacyPolicy": "Құпиялылық саясаты",
+  "rateApp": "Қолданбаны бағалау",
+
+  "copyrightNotice": "© {year} Kipy. Барлық құқықтар қорғалған.",
+  "@copyrightNotice": {
+    "description": "Copyright footer notice",
+    "placeholders": {
+      "year": {"type": "int"}
+    }
+  },
+
+  "notificationsTitle": "Хабарландырулар",
+  "noNotifications": "Хабарландырулар жоқ",
+  "goalReachedTitle": "Мақсатқа жеттіңіз! 🎉",
+  "goalReachedMessage": "«{goalTitle}» мақсаты үшін қаражат толық жиналды.",
+  "@goalReachedMessage": {
+    "placeholders": {
+      "goalTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetExceededTitle": "Бюджет лимиті асып кетті",
+  "budgetExceededMessage": "«{category}» санаты бойынша шығын лимиттен асты.",
+  "@budgetExceededMessage": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  }
+}

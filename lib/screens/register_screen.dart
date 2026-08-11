@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:finance_app/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -29,6 +30,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final l10n = AppLocalizations.of(context)!;
+
     setState(() => _isLoading = true);
 
     try {
@@ -47,16 +50,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       String message;
       switch (e.code) {
         case 'email-already-in-use':
-          message = 'Бұл email тіркелген';
+          message = l10n.emailAlreadyInUse;
           break;
         case 'invalid-email':
-          message = 'Email қате енгізілген';
+          message = l10n.invalidEmail;
           break;
         case 'weak-password':
-          message = 'Құпия сөз тым әлсіз';
+          message = l10n.passwordTooWeak;
           break;
         default:
-          message = 'Қате: ${e.message}';
+          message = l10n.errorWithMessage(e.message ?? '');
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -69,6 +72,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // 🔴 ТҮЗЕТІЛДІ: AppBackground Scaffold-тың сыртына шығарылды, ал Scaffold фоны transparent болды
     return AppBackground(
       safeArea: false,
@@ -114,13 +118,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Тіркелу',
+                    l10n.register,
                     textAlign: TextAlign.center,
                     style: appDisplay(fontSize: 26, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Жаңа аккаунт құрып бастаңыз',
+                    l10n.createNewAccountSubtitle,
                     textAlign: TextAlign.center,
                     style: appBody(color: kTextMuted, fontSize: 13.5),
                   ),
@@ -135,11 +139,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           controller: _nameController,
                           style: appBody(fontSize: 14.5),
                           decoration: appFieldDecoration(
-                            'Аты-жөні',
+                            l10n.fullName,
                             prefixIcon: const Icon(Icons.person_outline),
                           ),
                           validator: (value) => (value == null || value.isEmpty)
-                              ? 'Атыңызды енгізіңіз'
+                              ? l10n.enterYourName
                               : null,
                         ),
                         const SizedBox(height: 16),
@@ -148,12 +152,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           keyboardType: TextInputType.emailAddress,
                           style: appBody(fontSize: 14.5),
                           decoration: appFieldDecoration(
-                            'Email',
+                            l10n.email,
                             prefixIcon: const Icon(Icons.email_outlined),
                           ),
                           validator: (value) {
                             if (value == null || !value.contains('@')) {
-                              return 'Дұрыс email енгізіңіз';
+                              return l10n.enterValidEmail;
                             }
                             return null;
                           },
@@ -164,12 +168,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           obscureText: true,
                           style: appBody(fontSize: 14.5),
                           decoration: appFieldDecoration(
-                            'Құпия сөз',
+                            l10n.password,
                             prefixIcon: const Icon(Icons.lock_outline),
                           ),
                           validator: (value) {
                             if (value == null || value.length < 6) {
-                              return 'Кемінде 6 таңба болу керек';
+                              return l10n.minSixCharacters;
                             }
                             return null;
                           },
@@ -180,19 +184,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           obscureText: true,
                           style: appBody(fontSize: 14.5),
                           decoration: appFieldDecoration(
-                            'Құпия сөзді қайталаңыз',
+                            l10n.confirmPassword,
                             prefixIcon: const Icon(Icons.lock_outline),
                           ),
                           validator: (value) {
                             if (value != _passwordController.text) {
-                              return 'Құпия сөздер сәйкес келмейді';
+                              return l10n.passwordsDoNotMatch;
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 24),
                         GradientButton(
-                          label: 'Тіркелу',
+                          label: l10n.register,
                           loading: _isLoading,
                           onPressed: _isLoading ? null : _register,
                         ),

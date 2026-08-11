@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/transaction_model.dart';
 import '../theme/app_theme.dart';
+import '../l10n/app_localizations.dart';
 
 enum TimeFilter { week, month, year }
 
@@ -62,7 +63,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget build(BuildContext context) {
     if (_userId == null) {
       return Center(
-          child: Text('Кіру қажет', style: appBody(color: kTextSecondary)));
+          child: Text(AppLocalizations.of(context)!.loginRequired, style: appBody(color: kTextSecondary)));
     }
 
     final range = _getFilterRange();
@@ -81,7 +82,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         }
         if (snapshot.hasError) {
           return Center(
-              child: Text('Қате: ${snapshot.error}',
+              child: Text(AppLocalizations.of(context)!.errorWithMessage('${snapshot.error}'),
                   style: appBody(color: kTextSecondary)));
         }
 
@@ -101,7 +102,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         final categoryExpenses = <String, double>{};
         for (final t in transactions) {
           if (t.type == TransactionType.expense) {
-            final cat = t.category.trim().isEmpty ? 'Басқа' : t.category;
+            final cat = t.category.trim().isEmpty ? AppLocalizations.of(context)!.otherCategory : t.category;
             categoryExpenses[cat] = (categoryExpenses[cat] ?? 0) + t.amount;
           }
         }
@@ -121,7 +122,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Аналитика', style: appDisplay(fontSize: 24, fontWeight: FontWeight.w700)),
+                Text(AppLocalizations.of(context)!.analyticsTitle, style: appDisplay(fontSize: 24, fontWeight: FontWeight.w700)),
                 _buildFilterSegment(),
               ],
             ),
@@ -143,7 +144,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     const Icon(Icons.pie_chart_outline, size: 56, color: kTextMuted),
                     const SizedBox(height: 12),
                     Text(
-                      'Тандалған уақыт аралығында деректер жоқ',
+                      AppLocalizations.of(context)!.noExpensesInPeriod,
                       style: appBody(color: kTextMuted, fontSize: 14),
                     ),
                   ],
@@ -166,13 +167,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Баланс динамикасы',
+                        AppLocalizations.of(context)!.balanceDynamics,
                         style: appBody(
                             fontSize: 16, fontWeight: FontWeight.w700, color: kTextPrimary),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Әр транзакциядан кейінгі өзгеріс',
+                        AppLocalizations.of(context)!.balanceDynamicsSubtitle,
                         style: appBody(fontSize: 12, color: kTextMuted),
                       ),
                       const SizedBox(height: 18),
@@ -368,13 +369,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           String label;
           switch (filter) {
             case TimeFilter.week:
-              label = 'Апта';
+              label = AppLocalizations.of(context)!.filterWeek;
               break;
             case TimeFilter.month:
-              label = 'Ай';
+              label = AppLocalizations.of(context)!.filterMonth;
               break;
             case TimeFilter.year:
-              label = 'Жыл';
+              label = AppLocalizations.of(context)!.filterYear;
               break;
           }
           return GestureDetector(
@@ -497,7 +498,7 @@ class _InteractiveCategoryExpensesState extends State<_InteractiveCategoryExpens
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Шығындар санаты бойынша',
+            AppLocalizations.of(context)!.expensesByCategory,
             style: appBody(fontSize: 16, fontWeight: FontWeight.w700, color: kTextPrimary),
           ),
           const SizedBox(height: 20),
@@ -511,7 +512,7 @@ class _InteractiveCategoryExpensesState extends State<_InteractiveCategoryExpens
                     const Icon(Icons.monetization_on_outlined, size: 48, color: kTextMuted),
                     const SizedBox(height: 8),
                     Text(
-                      'Бұл мерзімде шығындар тіркелмеген',
+                      AppLocalizations.of(context)!.noExpensesRegisteredInPeriod,
                       style: appBody(color: kTextMuted, fontSize: 13),
                     ),
                   ],
@@ -666,7 +667,7 @@ class _SummaryRow extends StatelessWidget {
                       child: const Icon(Icons.north_east, color: kGreen, size: 16),
                     ),
                     const SizedBox(width: 8),
-                    Text('Табыс',
+                    Text(AppLocalizations.of(context)!.income,
                         style: appBody(
                             color: kTextSecondary, fontSize: 13, fontWeight: FontWeight.w500)),
                   ],
@@ -696,7 +697,7 @@ class _SummaryRow extends StatelessWidget {
                       child: const Icon(Icons.south_east, color: kClay, size: 16),
                     ),
                     const SizedBox(width: 8),
-                    Text('Шығын',
+                    Text(AppLocalizations.of(context)!.expense,
                         style: appBody(
                             color: kTextSecondary, fontSize: 13, fontWeight: FontWeight.w500)),
                   ],

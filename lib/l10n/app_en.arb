@@ -1,0 +1,255 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Personal Finances",
+  "@appTitle": {
+    "description": "App name shown on the home screen header"
+  },
+  "income": "Income",
+  "expense": "Expense",
+  "category": "Category",
+  "loginRequired": "Login required",
+
+  "errorWithMessage": "Error: {message}",
+  "@errorWithMessage": {
+    "description": "Generic error text with a message from an exception",
+    "placeholders": {
+      "message": {"type": "String"}
+    }
+  },
+
+  "fillAllFieldsCorrectly": "Please fill in all fields correctly",
+  "otherCategory": "Other",
+  "userNotFound": "No such user found",
+  "wrongPassword": "Incorrect password",
+  "invalidEmail": "Email entered incorrectly",
+  "invalidCredential": "Email or password is incorrect",
+
+  "loginTitle": "Log In",
+  "loginSubtitle": "Continue tracking your finances",
+  "emailLabel": "Email",
+  "emailRequired": "Enter your email",
+  "emailInvalid": "Enter a valid email",
+  "passwordLabel": "Password",
+  "passwordTooShort": "Must be at least 6 characters",
+  "noAccountRegister": "Don't have an account? Sign up",
+
+  "logoutTitle": "Log Out",
+  "logoutConfirm": "Are you sure you want to log out of your account?",
+  "cancel": "Cancel",
+  "logoutAction": "Log Out",
+  "logoutButton": "Log out of account",
+  "userFallback": "User",
+
+  "profileTitle": "Profile",
+  "personalSettings": "Personal Settings",
+  "editData": "Edit Data",
+  "editDataSubtitle": "Name, profile photo",
+  "notifications": "Notifications",
+  "notificationsSubtitle": "Alerts",
+  "noNotificationsYet": "No notifications yet",
+  "security": "Security",
+  "securitySubtitle": "Change password",
+  "appSection": "App",
+  "helpSupport": "Help & Support",
+  "helpAndSupport": "Help and support",
+  "aboutApp": "About the app",
+
+  "appVersion": "Version v{version}",
+  "@appVersion": {
+    "description": "App version label",
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  },
+
+  "passwordChangedSuccess": "Password changed successfully",
+  "wrongCurrentPassword": "Current password is incorrect",
+  "currentPasswordWrong": "Current password is incorrect",
+  "newPasswordTooWeak": "New password is too weak",
+  "newPasswordWeak": "New password is too weak",
+  "requiresRecentLogin": "For security, please log in again. Sign out and sign back in",
+  "tooManyRequests": "Too many attempts. Please try again later",
+  "nonEmailAccountNotice": "Your account was registered via another provider, not email/password. You can't change the password here.",
+  "otherProviderAccountNotice": "Your account was registered through another provider, not email/password. You can't change the password from here.",
+
+  "changePassword": "Change password",
+  "currentPassword": "Current password",
+  "currentPasswordLabel": "Current password",
+  "enterCurrentPassword": "Enter your current password",
+  "newPassword": "New password",
+  "newPasswordLabel": "New password",
+  "minSixCharacters": "Must be at least 6 characters",
+  "newPasswordMustDiffer": "New password must differ from the old one",
+  "confirmNewPassword": "Confirm new password",
+  "confirmNewPasswordLabel": "Repeat new password",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "savePassword": "Save password",
+  "savePasswordButton": "Save password",
+
+  "emailAlreadyInUse": "This email is already registered",
+  "passwordTooWeak": "Password is too weak",
+  "passwordWeak": "Password is too weak",
+  "register": "Register",
+  "registerTitle": "Sign Up",
+  "createNewAccountSubtitle": "Create a new account to get started",
+  "registerSubtitle": "Create a new account to get started",
+  "fullName": "Full name",
+  "fullNameLabel": "Full name",
+  "enterYourName": "Enter your name",
+  "email": "Email",
+  "enterValidEmail": "Enter a valid email",
+  "password": "Password",
+  "confirmPassword": "Confirm password",
+  "confirmPasswordLabel": "Repeat password",
+
+  "newGoal": "New Goal",
+  "goalNameLabel": "Goal name",
+  "goalTargetAmountLabel": "Target amount (₸)",
+  "selectDeadlineOptional": "Choose deadline (optional)",
+  "createGoal": "Create Goal",
+  "goalsTitle": "Goals",
+  "activeGoals": "Active goals",
+  "noGoalsYet": "No goals yet",
+  "noGoalsYetShort": "You don't have any goals yet",
+  "addGoalHint": "Tap + to add a new goal",
+
+  "categorySavings": "Savings",
+  "categoryTravel": "Travel",
+  "categoryProperty": "Property",
+  "categoryOther": "Other",
+
+  "goalTargetPrefix": "Target: {amount} ₸",
+  "@goalTargetPrefix": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "goalCollected": "{amount} ₸ collected",
+  "@goalCollected": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "newBudget": "New Budget",
+  "budgetCategoryHint": "Category (e.g. Transport, Food)",
+  "budgetLimitLabel": "Limit (₸)",
+  "createBudget": "Create Budget",
+  "budgetTitle": "Budget",
+  "currentMonth": "Current month",
+  "noBudgetsYet": "No budgets yet",
+  "addBudgetHint": "Tap + to add a new budget",
+
+  "budgetLimitPrefix": "Limit: {amount} ₸",
+  "@budgetLimitPrefix": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "budgetExceeded": "Exceeded",
+
+  "budgetRemaining": "{amount} ₸ remaining",
+  "@budgetRemaining": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "budgetSpent": "{amount} ₸ spent",
+  "@budgetSpent": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "incomeTitleFieldHint": "Income name (e.g. Salary, Bonus)",
+  "amountFieldLabel": "Amount (₸)",
+  "commentFieldLabel": "Comment",
+  "commentFieldHint": "Reason",
+  "chooseBudgetCategory": "Choose a budget category",
+  "goalSelected": "Goal selected",
+  "noBudgetCategoriesYet": "No budget categories yet. First create a category on the \"Budget\" page",
+  "addToGoalQuestion": "Add to a goal?",
+  "categorySelected": "Category selected",
+  "addButton": "Add",
+  "enterValidAmount": "Enter a valid amount",
+  "recentTransactions": "Recent transactions",
+  "noTransactions": "No transactions",
+  "addTransactionHint": "Tap the button above\nto add a new entry",
+  "totalBalance": "TOTAL BALANCE",
+  "incomeMini": "Income",
+  "topUp": "Top Up",
+  "spend": "Spend",
+  "navHome": "Home",
+  "newTransaction": "New Transaction",
+
+  "analyticsTitle": "Analytics",
+  "filterWeek": "Week",
+  "filterMonth": "Month",
+  "filterYear": "Year",
+  "balanceDynamics": "Balance dynamics",
+  "balanceDynamicsSubtitle": "Change after each transaction",
+  "expensesByCategory": "Expenses by category",
+  "noExpensesInPeriod": "No data for the selected period",
+  "noExpensesRegisteredInPeriod": "No expenses recorded for this period",
+
+  "frequentlyAskedQuestions": "Frequently asked questions",
+  "faqSectionTitle": "Frequently Asked Questions",
+  "faqQ1": "How do I add a transaction?",
+  "faqA1": "Tap the \"Top Up\" or \"Spend\" button on the home screen, enter the amount, category (if needed), and a comment, then tap \"Add\".",
+  "faqQ2": "What's the difference between a goal and a budget?",
+  "faqA2": "A budget helps you set a monthly spending limit for a specific category (e.g. Food). A goal is for saving up a specific amount (e.g. saving for a trip).",
+  "faqQ3": "If I delete a transaction, will the budget/goal amount change?",
+  "faqA3": "Yes. When you delete a transaction linked to a goal, the amount is automatically subtracted from the goal's collected total.",
+  "faqQ4": "Is my data secure?",
+  "faqA4": "All data is stored on Google Firebase servers and is linked only to your account. You can change your password anytime in the \"Security\" section of the profile page.",
+  "faqQ5": "What does the balance chart on the analytics page show?",
+  "faqA5": "It shows the accumulated balance after each transaction within the selected period — each point corresponds to one transaction.",
+
+  "editProfile": "Edit profile",
+  "photoChangeComingSoon": "Changing profile photo will be available soon",
+  "tapToChangePhoto": "Tap to change photo",
+  "contactSupportToChangeEmail": "Contact support to change your email",
+  "save": "Save",
+  "saveButton": "Save",
+  "couldNotOpenLink": "Could not open the link",
+
+  "appName": "Financial Literacy",
+  "financialLiteracy": "Financial Literacy",
+  "aboutAppDescription": "This app helps you track your daily income and expenses, set budgets, and reach your financial goals. All your data is stored securely and is accessible only to you.",
+  "termsOfUse": "Terms of Use",
+  "privacyPolicy": "Privacy Policy",
+  "rateApp": "Rate the App",
+
+  "copyrightNotice": "© {year} Kipy. All rights reserved.",
+  "@copyrightNotice": {
+    "description": "Copyright footer notice",
+    "placeholders": {
+      "year": {"type": "int"}
+    }
+  },
+
+  "notificationsTitle": "Notifications",
+  "noNotifications": "No notifications",
+  "goalReachedTitle": "Goal Reached! 🎉",
+  "goalReachedMessage": "Funds have been fully collected for the goal «{goalTitle}».",
+  "@goalReachedMessage": {
+    "placeholders": {
+      "goalTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetExceededTitle": "Budget Limit Exceeded",
+  "budgetExceededMessage": "Spending limit exceeded for category «{category}».",
+  "@budgetExceededMessage": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  }
+}

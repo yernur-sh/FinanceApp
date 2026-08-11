@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:finance_app/l10n/app_localizations.dart';
 import '../models/notification_model.dart';
 import '../theme/app_theme.dart';
 
@@ -65,13 +66,46 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  /// Хабарлама ішіндегі тырнақшадағы атауды (мақсат аты немесе категория) бөліп алу
+  String _extractName(String message) {
+    final regExp = RegExp(r'[«""](.*?)[»""]');
+    final match = regExp.firstMatch(message);
+    if (match != null && match.groupCount >= 1) {
+      return match.group(1) ?? '';
+    }
+    return '';
+  }
+
+  /// Ағымдағы тілге сәйкес Тақырыпты қайтару
+  String _getLocalizedTitle(NotificationModel n, AppLocalizations l10n) {
+    switch (n.type) {
+      case NotificationType.goalCompleted:
+        return l10n.goalReachedTitle;
+      case NotificationType.budgetExceeded:
+        return l10n.budgetExceededTitle;
+    }
+  }
+
+  /// Ағымдағы тілге сәйкес Хабарламаны қайтару
+  String _getLocalizedMessage(NotificationModel n, AppLocalizations l10n) {
+    final extractedName = _extractName(n.message);
+
+    switch (n.type) {
+      case NotificationType.goalCompleted:
+        return l10n.goalReachedMessage(extractedName);
+      case NotificationType.budgetExceeded:
+        return l10n.budgetExceededMessage(extractedName);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('Хабарландырулар', style: appBody(fontWeight: FontWeight.w700, fontSize: 20)),
+        title: Text(l10n.notifications, style: appBody(fontWeight: FontWeight.w700, fontSize: 20)),
         centerTitle: true,
       ),
       body: AppBackground(
@@ -85,7 +119,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               }
               if (snapshot.hasError) {
                 return Center(
-                    child: Text('Қате: ${snapshot.error}', style: appBody(color: kTextSecondary)));
+                    child: Text(l10n.errorWithMessage(snapshot.error.toString()),
+                        style: appBody(color: kTextSecondary)));
               }
 
               final notifications = snapshot.data ?? [];
@@ -99,7 +134,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       children: [
                         const Icon(Icons.notifications_none_rounded, size: 48, color: kTextMuted),
                         const SizedBox(height: 12),
-                        Text('Әзірге хабарландырулар жоқ', style: appBody(color: kTextMuted)),
+                        Text(l10n.noNotificationsYet, style: appBody(color: kTextMuted)),
                       ],
                     ),
                   ),
@@ -111,6 +146,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 itemCount: notifications.length,
                 itemBuilder: (context, index) {
                   final n = notifications[index];
+
+                  // Ағымдағы таңдаулы тілдегі мәтіндерді аламыз:
+                  final localizedTitle = _getLocalizedTitle(n, l10n);
+                  final localizedMessage = _getLocalizedMessage(n, l10n);
+
                   return Dismissible(
                     key: ValueKey(n.id),
                     direction: DismissDirection.endToStart,
@@ -154,11 +194,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(n.title,
+                                  Text(localizedTitle,
                                       style: appBody(
                                           fontWeight: FontWeight.w700, fontSize: 14.5, color: kTextPrimary)),
                                   const SizedBox(height: 4),
-                                  Text(n.message, style: appBody(color: kTextSecondary, fontSize: 13)),
+                                  Text(localizedMessage, style: appBody(color: kTextSecondary, fontSize: 13)),
                                   const SizedBox(height: 6),
                                   Text(_formatDate(n.createdAt),
                                       style: appBody(color: kTextMuted, fontSize: 11)),

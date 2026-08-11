@@ -5,7 +5,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/goal_model.dart';
 import '../theme/app_theme.dart';
 import '../services/notification_service.dart';
+import '../l10n/app_localizations.dart';
 
+/// GoalCategory enum-іне арналған локализация көмекшісі
+/// GoalCategory enum-іне арналған локализация көмекшісі
+extension GoalCategoryX on GoalCategory {
+  String getLocalizedLabel(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (this) {
+      case GoalCategory.savings:
+        return l10n.categorySavings;
+      case GoalCategory.travel:
+        return l10n.categoryTravel;
+      case GoalCategory.emergency: // 👈 property орнына emergency қолданылады
+        return l10n.categoryProperty;
+      case GoalCategory.other:
+        return l10n.categoryOther;
+    }
+  }
+}
 class GoalsScreen extends StatefulWidget {
   const GoalsScreen({super.key});
 
@@ -115,23 +133,23 @@ class _GoalsScreenState extends State<GoalsScreen> {
                       ),
                     ),
                   ),
-                  Text('Жаңа мақсат',
+                  Text(AppLocalizations.of(context)!.newGoal,
                       style: appDisplay(fontSize: 19, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 16),
                   TextField(
                     controller: titleController,
                     style: appBody(fontSize: 14.5),
-                    decoration: appFieldDecoration('Мақсат атауы'),
+                    decoration: appFieldDecoration(AppLocalizations.of(context)!.goalNameLabel),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: targetController,
                     keyboardType: TextInputType.number,
                     style: appBody(fontSize: 14.5),
-                    decoration: appFieldDecoration('Мақсатты сома (₸)'),
+                    decoration: appFieldDecoration(AppLocalizations.of(context)!.goalTargetAmountLabel),
                   ),
                   const SizedBox(height: 16),
-                  Text('Санат', style: appBody(color: kTextSecondary, fontSize: 13.5)),
+                  Text(AppLocalizations.of(context)!.category, style: appBody(color: kTextSecondary, fontSize: 13.5)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -140,7 +158,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
                       final info = goalCategoryData[cat]!;
                       final selected = selectedCategory == cat;
                       return ChoiceChip(
-                        label: Text(info.label),
+                        // 🌐 Осы жерде динамикалық аударма шақырылады:
+                        label: Text(cat.getLocalizedLabel(context)),
                         avatar: Icon(info.icon,
                             size: 18,
                             color: selected ? Colors.white : info.color),
@@ -162,10 +181,10 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   ),
                   const SizedBox(height: 16),
                   OutlinedButton.icon(
-                    icon: Icon(Icons.calendar_today, size: 18, color: kAccentLight),
+                    icon: const Icon(Icons.calendar_today, size: 18, color: kAccentLight),
                     label: Text(
                       selectedDeadline == null
-                          ? 'Мерзімін таңдау (міндетті емес)'
+                          ? AppLocalizations.of(context)!.selectDeadlineOptional
                           : _formatDate(selectedDeadline!),
                       style: appBody(color: kTextSecondary),
                     ),
@@ -189,15 +208,15 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   ),
                   const SizedBox(height: 20),
                   GradientButton(
-                    label: 'Мақсат құру',
+                    label: AppLocalizations.of(context)!.createGoal,
                     onPressed: () async {
                       final target = double.tryParse(targetController.text.trim());
                       if (titleController.text.trim().isEmpty ||
                           target == null ||
                           target <= 0) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Барлық өрісті дұрыс толтырыңыз')),
+                          SnackBar(
+                              content: Text(AppLocalizations.of(context)!.fillAllFieldsCorrectly)),
                         );
                         return;
                       }
@@ -239,7 +258,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
         }
         if (snapshot.hasError) {
           return Center(
-              child: Text('Қате: ${snapshot.error}',
+              child: Text(AppLocalizations.of(context)!.errorWithMessage('${snapshot.error}'),
                   style: appBody(color: kTextSecondary)));
         }
 
@@ -251,7 +270,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Мақсаттар', style: appDisplay(fontSize: 24, fontWeight: FontWeight.w700)),
+                Text(AppLocalizations.of(context)!.goalsTitle, style: appDisplay(fontSize: 24, fontWeight: FontWeight.w700)),
                 InkWell(
                   onTap: _addGoal,
                   borderRadius: BorderRadius.circular(14),
@@ -275,7 +294,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            Text('Белсенді мақсаттар', style: appBody(color: kTextMuted, fontSize: 15)),
+            Text(AppLocalizations.of(context)!.activeGoals, style: appBody(color: kTextMuted, fontSize: 15)),
             const SizedBox(height: 20),
             if (goals.isEmpty)
               GlassCard(
@@ -285,10 +304,10 @@ class _GoalsScreenState extends State<GoalsScreen> {
                   children: [
                     const Icon(Icons.flag_outlined, size: 48, color: kTextMuted),
                     const SizedBox(height: 12),
-                    Text('Әзірге мақсаттар жоқ', style: appBody(color: kTextMuted)),
+                    Text(AppLocalizations.of(context)!.noGoalsYet, style: appBody(color: kTextMuted)),
                     const SizedBox(height: 4),
                     Text(
-                      'Жаңа мақсат қосу үшін + батырмасын басыңыз',
+                      AppLocalizations.of(context)!.addGoalHint,
                       style: appBody(color: kTextMuted, fontSize: 13),
                       textAlign: TextAlign.center,
                     ),
@@ -362,7 +381,7 @@ class _GoalCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Мақсат: ${formatMoney(goal.targetAmount)} ₸',
+                        AppLocalizations.of(context)!.goalTargetPrefix(formatMoney(goal.targetAmount)),
                         style: appBody(color: kTextMuted, fontSize: 13),
                       ),
                     ],
@@ -398,7 +417,7 @@ class _GoalCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${formatMoney(goal.currentAmount)} ₸ жиналды',
+                  AppLocalizations.of(context)!.goalCollected(formatMoney(goal.currentAmount)),
                   style: appBody(color: kTextSecondary, fontSize: 12),
                 ),
                 if (goal.deadline != null)

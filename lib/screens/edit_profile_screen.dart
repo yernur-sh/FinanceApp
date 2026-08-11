@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:finance_app/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -52,7 +53,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Қате: ${e.message}'), backgroundColor: kClay),
+        SnackBar(
+            content: Text(AppLocalizations.of(context)!.errorWithMessage(e.message ?? '')),
+            backgroundColor: kClay),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -62,7 +65,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void _showPhotoComingSoon() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Профиль суретін өзгерту жақын арада қолжетімді болады'),
+        content: Text(AppLocalizations.of(context)!.photoChangeComingSoon),
         backgroundColor: kSurface,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -72,6 +75,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final email = _user?.email ?? '';
     final currentName = _nameController.text;
 
@@ -95,7 +99,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             color: kTextPrimary, size: 18),
                       ),
                       Text(
-                        'Деректерді өңдеу',
+                        l10n.editProfile,
                         style: appDisplay(fontSize: 18, fontWeight: FontWeight.w700),
                       ),
                     ],
@@ -150,7 +154,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 10),
                   Center(
                     child: Text(
-                      'Суретті ауыстыру үшін басыңыз',
+                      l10n.tapToChangePhoto,
                       style: appBody(fontSize: 12, color: kTextMuted),
                     ),
                   ),
@@ -166,16 +170,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           onChanged: (_) => setState(() {}),
                           style: appBody(fontSize: 14.5),
                           decoration: appFieldDecoration(
-                            'Аты-жөні',
+                            l10n.fullName,
                             prefixIcon: const Icon(Icons.person_outline),
                           ),
                           validator: (value) => (value == null || value.trim().isEmpty)
-                              ? 'Атыңызды енгізіңіз'
+                              ? l10n.enterYourName
                               : null,
                         ),
                         const SizedBox(height: 18),
                         Text(
-                          'Email',
+                          l10n.email,
                           style: appBody(
                               fontSize: 12.5, color: kTextMuted, fontWeight: FontWeight.w600),
                         ),
@@ -205,7 +209,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         Padding(
                           padding: const EdgeInsets.only(left: 2),
                           child: Text(
-                            'Email өзгерту үшін қолдау қызметіне хабарласыңыз',
+                            l10n.contactSupportToChangeEmail,
                             style: appBody(fontSize: 11, color: kTextMuted),
                           ),
                         ),
@@ -214,7 +218,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   const SizedBox(height: 24),
                   GradientButton(
-                    label: 'Сақтау',
+                    label: l10n.save,
                     loading: _isLoading,
                     onPressed: _isLoading ? null : _save,
                   ),

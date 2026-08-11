@@ -1,0 +1,255 @@
+{
+  "@@locale": "ru",
+
+  "appTitle": "Личные финансы",
+  "@appTitle": {
+    "description": "App name shown on the home screen header"
+  },
+  "income": "Доход",
+  "expense": "Расход",
+  "category": "Категория",
+  "loginRequired": "Необходимо войти",
+
+  "errorWithMessage": "Ошибка: {message}",
+  "@errorWithMessage": {
+    "description": "Generic error text with a message from an exception",
+    "placeholders": {
+      "message": {"type": "String"}
+    }
+  },
+
+  "fillAllFieldsCorrectly": "Заполните все поля правильно",
+  "otherCategory": "Другое",
+  "userNotFound": "Такой пользователь не найден",
+  "wrongPassword": "Неверный пароль",
+  "invalidEmail": "Email введён неверно",
+  "invalidCredential": "Email или пароль неверны",
+
+  "loginTitle": "Войти",
+  "loginSubtitle": "Продолжайте контролировать свои финансы",
+  "emailLabel": "Email",
+  "emailRequired": "Введите email",
+  "emailInvalid": "Введите корректный email",
+  "passwordLabel": "Пароль",
+  "passwordTooShort": "Должно быть не менее 6 символов",
+  "noAccountRegister": "Нет аккаунта? Зарегистрироваться",
+
+  "logoutTitle": "Выход из системы",
+  "logoutConfirm": "Вы действительно хотите выйти из аккаунта?",
+  "cancel": "Отмена",
+  "logoutAction": "Выйти",
+  "logoutButton": "Выйти из аккаунта",
+  "userFallback": "Пользователь",
+
+  "profileTitle": "Профиль",
+  "personalSettings": "Личные настройки",
+  "editData": "Редактировать данные",
+  "editDataSubtitle": "Имя, фото профиля",
+  "notifications": "Уведомления",
+  "notificationsSubtitle": "Оповещения",
+  "noNotificationsYet": "Пока нет уведомлений",
+  "security": "Безопасность",
+  "securitySubtitle": "Изменить пароль",
+  "appSection": "Приложение",
+  "helpSupport": "Помощь и поддержка",
+  "helpAndSupport": "Помощь и поддержка",
+  "aboutApp": "О приложении",
+
+  "appVersion": "Версия v{version}",
+  "@appVersion": {
+    "description": "App version label",
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  },
+
+  "passwordChangedSuccess": "Пароль успешно изменён",
+  "wrongCurrentPassword": "Текущий пароль неверен",
+  "currentPasswordWrong": "Текущий пароль неверен",
+  "newPasswordTooWeak": "Новый пароль слишком слабый",
+  "newPasswordWeak": "Новый пароль слишком слабый",
+  "requiresRecentLogin": "Для безопасности требуется повторный вход. Выйдите и войдите снова",
+  "tooManyRequests": "Слишком много попыток. Повторите чуть позже",
+  "nonEmailAccountNotice": "Ваш аккаунт зарегистрирован не через email/пароль, а через другого провайдера. Изменить пароль здесь невозможно.",
+  "otherProviderAccountNotice": "Ваш аккаунт зарегистрирован через другого провайдера, а не через email/пароль. Изменить пароль отсюда невозможно.",
+
+  "changePassword": "Изменить пароль",
+  "currentPassword": "Текущий пароль",
+  "currentPasswordLabel": "Текущий пароль",
+  "enterCurrentPassword": "Введите текущий пароль",
+  "newPassword": "Новый пароль",
+  "newPasswordLabel": "Новый пароль",
+  "minSixCharacters": "Должно быть не менее 6 символов",
+  "newPasswordMustDiffer": "Новый пароль должен отличаться от старого",
+  "confirmNewPassword": "Повторите новый пароль",
+  "confirmNewPasswordLabel": "Повторите новый пароль",
+  "passwordsDoNotMatch": "Пароли не совпадают",
+  "savePassword": "Сохранить пароль",
+  "savePasswordButton": "Сохранить пароль",
+
+  "emailAlreadyInUse": "Этот email уже зарегистрирован",
+  "passwordTooWeak": "Пароль слишком слабый",
+  "passwordWeak": "Пароль слишком слабый",
+  "register": "Регистрация",
+  "registerTitle": "Регистрация",
+  "createNewAccountSubtitle": "Создайте новый аккаунт и начните",
+  "registerSubtitle": "Создайте новый аккаунт и начните",
+  "fullName": "Имя и фамилия",
+  "fullNameLabel": "Имя",
+  "enterYourName": "Введите ваше имя",
+  "email": "Email",
+  "enterValidEmail": "Введите корректный email",
+  "password": "Пароль",
+  "confirmPassword": "Повторите пароль",
+  "confirmPasswordLabel": "Повторите пароль",
+
+  "newGoal": "Новая цель",
+  "goalNameLabel": "Название цели",
+  "goalTargetAmountLabel": "Целевая сумма (₸)",
+  "selectDeadlineOptional": "Выбрать срок (необязательно)",
+  "createGoal": "Создать цель",
+  "goalsTitle": "Цели",
+  "activeGoals": "Активные цели",
+  "noGoalsYet": "Пока целей нет",
+  "noGoalsYetShort": "У вас пока нет целей",
+  "addGoalHint": "Нажмите +, чтобы добавить новую цель",
+
+  "categorySavings": "Сбережения",
+  "categoryTravel": "Путешествия",
+  "categoryProperty": "Недвижимость",
+  "categoryOther": "Другое",
+
+  "goalTargetPrefix": "Цель: {amount} ₸",
+  "@goalTargetPrefix": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "goalCollected": "Накоплено {amount} ₸",
+  "@goalCollected": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "newBudget": "Новый бюджет",
+  "budgetCategoryHint": "Категория (напр. Транспорт, Еда)",
+  "budgetLimitLabel": "Лимит (₸)",
+  "createBudget": "Создать бюджет",
+  "budgetTitle": "Бюджет",
+  "currentMonth": "Текущий месяц",
+  "noBudgetsYet": "Пока бюджетов нет",
+  "addBudgetHint": "Нажмите +, чтобы добавить новый бюджет",
+
+  "budgetLimitPrefix": "Лимит: {amount} ₸",
+  "@budgetLimitPrefix": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "budgetExceeded": "Превышен",
+
+  "budgetRemaining": "Осталось {amount} ₸",
+  "@budgetRemaining": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "budgetSpent": "Потрачено {amount} ₸",
+  "@budgetSpent": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+
+  "incomeTitleFieldHint": "Название дохода (напр. Зарплата, Премия)",
+  "amountFieldLabel": "Сумма (₸)",
+  "commentFieldLabel": "Комментарий",
+  "commentFieldHint": "Причина",
+  "chooseBudgetCategory": "Выберите категорию бюджета",
+  "goalSelected": "Цель выбрана",
+  "noBudgetCategoriesYet": "Пока категорий бюджета нет. Сначала создайте категорию на странице \"Бюджет\"",
+  "addToGoalQuestion": "Добавить к цели?",
+  "categorySelected": "Категория выбрана",
+  "addButton": "Добавить",
+  "enterValidAmount": "Введите корректную сумму",
+  "recentTransactions": "Последние транзакции",
+  "noTransactions": "Транзакций нет",
+  "addTransactionHint": "Нажмите кнопку выше,\nчтобы добавить новую запись",
+  "totalBalance": "ОБЩИЙ БАЛАНС",
+  "incomeMini": "Поступление",
+  "topUp": "Пополнить",
+  "spend": "Потратить",
+  "navHome": "Главная",
+  "newTransaction": "Новая транзакция",
+
+  "analyticsTitle": "Аналитика",
+  "filterWeek": "Неделя",
+  "filterMonth": "Месяц",
+  "filterYear": "Год",
+  "balanceDynamics": "Динамика баланса",
+  "balanceDynamicsSubtitle": "Изменение после каждой транзакции",
+  "expensesByCategory": "Расходы по категориям",
+  "noExpensesInPeriod": "За выбранный период данных нет",
+  "noExpensesRegisteredInPeriod": "За этот период расходы не зафиксированы",
+
+  "frequentlyAskedQuestions": "Часто задаваемые вопросы",
+  "faqSectionTitle": "Часто задаваемые вопросы",
+  "faqQ1": "Как добавить транзакцию?",
+  "faqA1": "Нажмите кнопку «Пополнить» или «Потратить» на главном экране, введите сумму, категорию (при необходимости) и комментарий, затем нажмите «Добавить».",
+  "faqQ2": "В чём разница между целью и бюджетом?",
+  "faqA2": "Бюджет помогает установить месячный лимит расходов по определённой категории (например, «Еда»). Цель предназначена для накопления конкретной суммы (например, на поездку).",
+  "faqQ3": "Изменится ли сумма бюджета/цели, если удалить транзакцию?",
+  "faqA3": "Да. При удалении транзакции, если она была связана с целью, сумма автоматически вычитается из накопленной суммы цели.",
+  "faqQ4": "Безопасны ли мои данные?",
+  "faqA4": "Все данные хранятся на серверах Google Firebase и связаны только с вашим аккаунтом. В разделе «Безопасность» на странице профиля вы можете в любой момент изменить пароль.",
+  "faqQ5": "Что показывает график баланса на странице аналитики?",
+  "faqA5": "Он показывает накопленный баланс после каждой транзакции за выбранный период — каждая точка соответствует одной транзакции.",
+
+  "editProfile": "Редактировать данные",
+  "photoChangeComingSoon": "Изменение фото профиля скоро будет доступно",
+  "tapToChangePhoto": "Нажмите, чтобы изменить фото",
+  "contactSupportToChangeEmail": "Чтобы изменить email, обратитесь в службу поддержки",
+  "save": "Сохранить",
+  "saveButton": "Сохранить",
+  "couldNotOpenLink": "Не удалось открыть ссылку",
+
+  "appName": "Финансовая грамотность",
+  "financialLiteracy": "Финансовая грамотность",
+  "aboutAppDescription": "Это приложение помогает отслеживать ваши ежедневные доходы и расходы, устанавливать бюджет и достигать финансовых целей. Все ваши данные надёжно хранятся и доступны только вам.",
+  "termsOfUse": "Условия использования",
+  "privacyPolicy": "Политика конфиденциальности",
+  "rateApp": "Оценить приложение",
+
+  "copyrightNotice": "© {year} Kipy. Все права защищены.",
+  "@copyrightNotice": {
+    "description": "Copyright footer notice",
+    "placeholders": {
+      "year": {"type": "int"}
+    }
+  },
+
+  "notificationsTitle": "Уведомления",
+  "noNotifications": "Нет уведомлений",
+  "goalReachedTitle": "Цель достигнута! 🎉",
+  "goalReachedMessage": "Средства для цели «{goalTitle}» успешно собраны.",
+  "@goalReachedMessage": {
+    "placeholders": {
+      "goalTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetExceededTitle": "Лимит бюджета превышен",
+  "budgetExceededMessage": "Превышен лимит расходов по категории «{category}».",
+  "@budgetExceededMessage": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  }
+}

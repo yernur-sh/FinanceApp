@@ -55,7 +55,6 @@ class NotificationService {
     required int month,
     required int year,
   }) {
-    // relatedId ай/жылға байланысты — келесі айда лимит қайта асса қайта хабарлайды
     final relatedId = '$budgetId-$month-$year';
     return _createIfNotExists(
       userId: userId,

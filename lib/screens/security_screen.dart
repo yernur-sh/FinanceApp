@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:finance_app/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class SecurityScreen extends StatefulWidget {
@@ -35,6 +36,8 @@ class _SecurityScreenState extends State<SecurityScreen> {
     final email = _user?.email;
     if (email == null) return;
 
+    final l10n = AppLocalizations.of(context)!;
+
     setState(() => _isLoading = true);
 
     try {
@@ -48,7 +51,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Құпия сөз сәтті өзгертілді'),
+          content: Text(l10n.passwordChangedSuccess),
           backgroundColor: kGreen,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -60,19 +63,19 @@ class _SecurityScreenState extends State<SecurityScreen> {
       switch (e.code) {
         case 'wrong-password':
         case 'invalid-credential':
-          message = 'Қазіргі құпия сөз қате';
+          message = l10n.wrongCurrentPassword;
           break;
         case 'weak-password':
-          message = 'Жаңа құпия сөз тым әлсіз';
+          message = l10n.newPasswordTooWeak;
           break;
         case 'requires-recent-login':
-          message = 'Қауіпсіздік үшін қайта кіру қажет. Шығып, қайта кіріңіз';
+          message = l10n.requiresRecentLogin;
           break;
         case 'too-many-requests':
-          message = 'Тым көп әрекет жасалды. Сәл кейін қайталаңыз';
+          message = l10n.tooManyRequests;
           break;
         default:
-          message = 'Қате: ${e.message}';
+          message = l10n.errorWithMessage(e.message ?? '');
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -85,8 +88,9 @@ class _SecurityScreenState extends State<SecurityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isEmailAccount = _user?.providerData
-            .any((p) => p.providerId == 'password') ??
+        .any((p) => p.providerId == 'password') ??
         false;
 
     return Scaffold(
@@ -107,7 +111,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                           color: kTextPrimary, size: 18),
                     ),
                     Text(
-                      'Қауіпсіздік',
+                      l10n.security,
                       style: appDisplay(fontSize: 18, fontWeight: FontWeight.w700),
                     ),
                   ],
@@ -143,7 +147,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Сіздің аккаунтыңыз email/құпия сөз арқылы емес, басқа провайдер арқылы тіркелген. Құпия сөзді осы жерден өзгерту мүмкін емес.',
+                            l10n.nonEmailAccountNotice,
                             style: appBody(fontSize: 13, color: kTextSecondary, height: 1.4),
                           ),
                         ),
@@ -160,7 +164,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Құпия сөзді өзгерту',
+                            l10n.changePassword,
                             style: appBody(
                                 fontSize: 15, fontWeight: FontWeight.w700, color: kTextPrimary),
                           ),
@@ -170,7 +174,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                             obscureText: _obscureCurrent,
                             style: appBody(fontSize: 14.5),
                             decoration: appFieldDecoration(
-                              'Қазіргі құпия сөз',
+                              l10n.currentPassword,
                               prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -182,7 +186,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                               ),
                             ),
                             validator: (value) => (value == null || value.isEmpty)
-                                ? 'Қазіргі құпия сөзді енгізіңіз'
+                                ? l10n.enterCurrentPassword
                                 : null,
                           ),
                           const SizedBox(height: 16),
@@ -191,7 +195,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                             obscureText: _obscureNew,
                             style: appBody(fontSize: 14.5),
                             decoration: appFieldDecoration(
-                              'Жаңа құпия сөз',
+                              l10n.newPassword,
                               prefixIcon: const Icon(Icons.lock_reset_rounded),
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -203,10 +207,10 @@ class _SecurityScreenState extends State<SecurityScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.length < 6) {
-                                return 'Кемінде 6 таңба болу керек';
+                                return l10n.minSixCharacters;
                               }
                               if (value == _currentPasswordController.text) {
-                                return 'Жаңа құпия сөз ескісінен өзгеше болуы керек';
+                                return l10n.newPasswordMustDiffer;
                               }
                               return null;
                             },
@@ -217,7 +221,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                             obscureText: _obscureConfirm,
                             style: appBody(fontSize: 14.5),
                             decoration: appFieldDecoration(
-                              'Жаңа құпия сөзді қайталаңыз',
+                              l10n.confirmNewPassword,
                               prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -230,14 +234,14 @@ class _SecurityScreenState extends State<SecurityScreen> {
                             ),
                             validator: (value) {
                               if (value != _newPasswordController.text) {
-                                return 'Құпия сөздер сәйкес келмейді';
+                                return l10n.passwordsDoNotMatch;
                               }
                               return null;
                             },
                           ),
                           const SizedBox(height: 24),
                           GradientButton(
-                            label: 'Құпия сөзді сақтау',
+                            label: l10n.savePassword,
                             loading: _isLoading,
                             onPressed: _isLoading ? null : _changePassword,
                           ),

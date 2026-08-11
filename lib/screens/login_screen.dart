@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_theme.dart';
+import '../l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,19 +41,19 @@ class _LoginScreenState extends State<LoginScreen> {
       String message;
       switch (e.code) {
         case 'user-not-found':
-          message = 'Мұндай пайдаланушы табылмады';
+          message = AppLocalizations.of(context)!.userNotFound;
           break;
         case 'wrong-password':
-          message = 'Құпия сөз қате';
+          message = AppLocalizations.of(context)!.wrongPassword;
           break;
         case 'invalid-email':
-          message = 'Email қате енгізілген';
+          message = AppLocalizations.of(context)!.invalidEmail;
           break;
         case 'invalid-credential':
-          message = 'Email немесе құпия сөз қате';
+          message = AppLocalizations.of(context)!.invalidCredential;
           break;
         default:
-          message = 'Қате: ${e.message}';
+          message = AppLocalizations.of(context)!.errorWithMessage(e.message ?? '');
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -103,13 +104,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 22),
                     Text(
-                      'Кіру',
+                      AppLocalizations.of(context)!.loginTitle,
                       textAlign: TextAlign.center,
                       style: appDisplay(fontSize: 28, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Қаржыңызды бақылауды жалғастырыңыз',
+                      AppLocalizations.of(context)!.loginSubtitle,
                       textAlign: TextAlign.center,
                       style: appBody(color: kTextMuted, fontSize: 13.5),
                     ),
@@ -125,15 +126,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             keyboardType: TextInputType.emailAddress,
                             style: appBody(fontSize: 14.5),
                             decoration: appFieldDecoration(
-                              'Email',
+                              AppLocalizations.of(context)!.emailLabel,
                               prefixIcon: const Icon(Icons.email_outlined),
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Email енгізіңіз';
+                                return AppLocalizations.of(context)!.emailRequired;
                               }
                               if (!value.contains('@')) {
-                                return 'Дұрыс email енгізіңіз';
+                                return AppLocalizations.of(context)!.emailInvalid;
                               }
                               return null;
                             },
@@ -144,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             obscureText: _obscurePassword,
                             style: appBody(fontSize: 14.5),
                             decoration: appFieldDecoration(
-                              'Құпия сөз',
+                              AppLocalizations.of(context)!.passwordLabel,
                               prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -161,14 +162,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.length < 6) {
-                                return 'Кемінде 6 таңба болу керек';
+                                return AppLocalizations.of(context)!.passwordTooShort;
                               }
                               return null;
                             },
                           ),
                           const SizedBox(height: 24),
                           GradientButton(
-                            label: 'Кіру',
+                            label: AppLocalizations.of(context)!.loginTitle,
                             loading: _isLoading,
                             onPressed: _isLoading ? null : _login,
                           ),
@@ -183,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Navigator.pushNamed(context, '/register');
                       },
                       child: Text(
-                        'Аккаунтыңыз жоқ па? Тіркелу',
+                        AppLocalizations.of(context)!.noAccountRegister,
                         style: appBody(
                             color: kAccentLight, fontWeight: FontWeight.w600),
                       ),

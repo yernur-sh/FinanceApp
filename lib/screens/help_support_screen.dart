@@ -1,34 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:finance_app/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({super.key});
 
-  static const _faqs = [
-    (
-      q: 'Транзакцияны қалай қосамын?',
-      a: 'Басты беттегі "Толықтыру" немесе "Жұмсау" батырмасын басыңыз, соманы, санатты (қажет болса) және комментарий енгізіп, "Қосу" батырмасын басыңыз.',
-    ),
-    (
-      q: 'Мақсат пен бюджеттің айырмашылығы неде?',
-      a: 'Бюджет — белгілі бір санатқа (мыс. Тамақ) айлық шығын лимитін қоюға көмектеседі. Мақсат — белгілі бір соманы жинауға арналған (мыс. саяхатқа ақша жинау).',
-    ),
-    (
-      q: 'Транзакцияны өшірсем, бюджет/мақсат саны өзгере ме?',
-      a: 'Иә. Транзакцияны өшіргенде, егер ол мақсатқа байланысты болса — мақсаттың жиналған сомасынан автоматты түрде алынып тасталады.',
-    ),
-    (
-      q: 'Деректерім қауіпсіз бе?',
-      a: 'Барлық деректер Google Firebase серверлерінде сақталады және тек сіздің аккаунтыңызбен байланысты. Профиль бетіндегі "Қауіпсіздік" бөлімінен құпия сөзді кез келген уақытта өзгерте аласыз.',
-    ),
-    (
-      q: 'Аналитика бетіндегі баланс графигі нені көрсетеді?',
-      a: 'Ол таңдалған кезең ішіндегі әрбір транзакциядан кейінгі жинақталған балансты көрсетеді — әр нүкте бір транзакцияға сәйкес келеді.',
-    ),
+  List<({String q, String a})> _faqs(AppLocalizations l10n) => [
+    (q: l10n.faqQ1, a: l10n.faqA1),
+    (q: l10n.faqQ2, a: l10n.faqA2),
+    (q: l10n.faqQ3, a: l10n.faqA3),
+    (q: l10n.faqQ4, a: l10n.faqA4),
+    (q: l10n.faqQ5, a: l10n.faqA5),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final faqs = _faqs(l10n);
     return Scaffold(
       backgroundColor: const Color(0xFF03050A),
       body: AppBackground(
@@ -45,7 +33,7 @@ class HelpSupportScreen extends StatelessWidget {
                         color: kTextPrimary, size: 18),
                   ),
                   Text(
-                    'Көмек және қолдау',
+                    l10n.helpAndSupport,
                     style: appDisplay(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                 ],
@@ -72,18 +60,18 @@ class HelpSupportScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 48),
-              _SectionLabel('Жиі қойылатын сұрақтар'),
+              _SectionLabel(l10n.frequentlyAskedQuestions),
               const SizedBox(height: 10),
               GlassCard(
                 padding: EdgeInsets.zero,
                 radius: 20,
                 child: Column(
                   children: [
-                    for (int i = 0; i < _faqs.length; i++)
+                    for (int i = 0; i < faqs.length; i++)
                       _FaqTile(
-                        question: _faqs[i].q,
-                        answer: _faqs[i].a,
-                        isLast: i == _faqs.length - 1,
+                        question: faqs[i].q,
+                        answer: faqs[i].a,
+                        isLast: i == faqs.length - 1,
                       ),
                   ],
                 ),

@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:finance_app/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 // TODO: осы үшеуін нақты мәндермен ауыстырыңыз
@@ -19,7 +20,7 @@ class AboutAppScreen extends StatelessWidget {
     if (!opened && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Сілтемені ашу мүмкін болмады'),
+          content: Text(AppLocalizations.of(context)!.couldNotOpenLink),
           backgroundColor: kClay,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -36,6 +37,7 @@ class AboutAppScreen extends StatelessWidget {
   }
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: const Color(0xFF03050A),
       body: AppBackground(
@@ -52,7 +54,7 @@ class AboutAppScreen extends StatelessWidget {
                         color: kTextPrimary, size: 18),
                   ),
                   Text(
-                    'Қолданба туралы',
+                    l10n.aboutApp,
                     style: appDisplay(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                 ],
@@ -80,12 +82,12 @@ class AboutAppScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Қаржылай сауаттылық',
+                      l10n.appName,
                       style: appDisplay(fontSize: 20, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Нұсқасы v1.0.0',
+                      l10n.appVersion('1.0.0'),
                       style: appBody(fontSize: 13, color: kTextMuted),
                     ),
                   ],
@@ -95,9 +97,7 @@ class AboutAppScreen extends StatelessWidget {
               GlassCard(
                 radius: 22,
                 child: Text(
-                  'Бұл қолданба сіздің күнделікті кірістеріңіз бен шығыстарыңызды бақылауға, '
-                      'бюджет орнатуға және қаржылай мақсаттарға жетуге көмектеседі. Барлық '
-                      'деректеріңіз қауіпсіз түрде сақталады және тек сізге ғана қолжетімді.',
+                  l10n.aboutAppDescription,
                   style: appBody(fontSize: 13.5, color: kTextSecondary, height: 1.6),
                 ),
               ),
@@ -109,19 +109,19 @@ class AboutAppScreen extends StatelessWidget {
                   children: [
                     _InfoTile(
                       icon: Icons.description_outlined,
-                      title: 'Пайдалану шарттары',
+                      title: l10n.termsOfUse,
                       onTap: () => _openUrl(context, _kTermsUrl),
                     ),
                     const Divider(height: 1, color: kBorder),
                     _InfoTile(
                       icon: Icons.privacy_tip_outlined,
-                      title: 'Құпиялылық саясаты',
+                      title: l10n.privacyPolicy,
                       onTap: () => _openUrl(context, _kPrivacyPolicyUrl),
                     ),
                     const Divider(height: 1, color: kBorder),
                     _InfoTile(
                       icon: Icons.star_outline_rounded,
-                      title: 'Қолданбаны бағалау',
+                      title: l10n.rateApp,
                       onTap: () => _openStoreListing(context),
                       isLast: true,
                     ),
@@ -131,7 +131,7 @@ class AboutAppScreen extends StatelessWidget {
               const SizedBox(height: 28),
               Center(
                 child: Text(
-                  '© 2026 Kipy. Барлық құқықтар қорғалған.',
+                  l10n.copyrightNotice(2026),
                   style: appBody(fontSize: 11.5, color: kTextMuted),
                 ),
               ),

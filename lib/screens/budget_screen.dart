@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/budget_model.dart';
 import '../theme/app_theme.dart';
 import '../services/notification_service.dart';
+import '../l10n/app_localizations.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
@@ -82,24 +83,24 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       ),
                     ),
                   ),
-                  Text('Жаңа бюджет',
+                  Text(AppLocalizations.of(context)!.newBudget,
                       style: appDisplay(fontSize: 19, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 16),
                   TextField(
                     controller: categoryController,
                     style: appBody(fontSize: 14.5),
-                    decoration: appFieldDecoration('Санат (мыс. Көлік, Тамақ)'),
+                    decoration: appFieldDecoration(AppLocalizations.of(context)!.budgetCategoryHint),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: limitController,
                     keyboardType: TextInputType.number,
                     style: appBody(fontSize: 14.5),
-                    decoration: appFieldDecoration('Лимит (₸)'),
+                    decoration: appFieldDecoration(AppLocalizations.of(context)!.budgetLimitLabel),
                   ),
                   const SizedBox(height: 20),
                   GradientButton(
-                    label: 'Бюджет құру',
+                    label: AppLocalizations.of(context)!.createBudget,
                     onPressed: () async {
                       final limit = double.tryParse(
                         limitController.text.trim(),
@@ -108,8 +109,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
                       if (category.isEmpty || limit == null || limit <= 0) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Барлық өрісті дұрыс толтырыңыз'),
+                          SnackBar(
+                            content: Text(AppLocalizations.of(context)!.fillAllFieldsCorrectly),
                           ),
                         );
                         return;
@@ -144,10 +145,10 @@ class _BudgetScreenState extends State<BudgetScreen> {
   }
 
   Future<double> _getSpentForCategory(
-    String category,
-    int month,
-    int year,
-  ) async {
+      String category,
+      int month,
+      int year,
+      ) async {
     if (_userId == null) return 0.0;
 
     final start = DateTime(year, month, 1);
@@ -186,7 +187,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
   Widget build(BuildContext context) {
     if (_userId == null) {
       return Center(
-          child: Text('Кіру қажет', style: appBody(color: kTextSecondary)));
+          child: Text(AppLocalizations.of(context)!.loginRequired, style: appBody(color: kTextSecondary)));
     }
 
     final now = DateTime.now();
@@ -207,13 +208,13 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
         if (snapshot.hasError) {
           return Center(
-              child: Text('Қате: ${snapshot.error}',
+              child: Text(AppLocalizations.of(context)!.errorWithMessage('${snapshot.error}'),
                   style: appBody(color: kTextSecondary)));
         }
 
         final budgets = snapshot.data?.docs
-                .map((doc) => BudgetModel.fromDoc(doc))
-                .toList() ??
+            .map((doc) => BudgetModel.fromDoc(doc))
+            .toList() ??
             [];
 
         return ListView(
@@ -222,7 +223,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Бюджет', style: appDisplay(fontSize: 24, fontWeight: FontWeight.w700)),
+                Text(AppLocalizations.of(context)!.budgetTitle, style: appDisplay(fontSize: 24, fontWeight: FontWeight.w700)),
                 InkWell(
                   onTap: _addBudget,
                   borderRadius: BorderRadius.circular(14),
@@ -246,7 +247,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            Text('Ағымдағы ай', style: appBody(color: kTextMuted, fontSize: 15)),
+            Text(AppLocalizations.of(context)!.currentMonth, style: appBody(color: kTextMuted, fontSize: 15)),
             const SizedBox(height: 20),
             if (budgets.isEmpty)
               GlassCard(
@@ -260,10 +261,10 @@ class _BudgetScreenState extends State<BudgetScreen> {
                       color: kTextMuted,
                     ),
                     const SizedBox(height: 12),
-                    Text('Әзірге бюджеттер жоқ', style: appBody(color: kTextMuted)),
+                    Text(AppLocalizations.of(context)!.noBudgetsYet, style: appBody(color: kTextMuted)),
                     const SizedBox(height: 4),
                     Text(
-                      'Жаңа бюджет қосу үшін + батырмасын басыңыз',
+                      AppLocalizations.of(context)!.addBudgetHint,
                       style: appBody(color: kTextMuted, fontSize: 13),
                       textAlign: TextAlign.center,
                     ),
@@ -354,7 +355,7 @@ class _BudgetCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Лимит: ${formatMoney(budget.limit)} ₸',
+                          AppLocalizations.of(context)!.budgetLimitPrefix(formatMoney(budget.limit)),
                           style: appBody(color: kTextMuted, fontSize: 13),
                         ),
                       ],
@@ -403,11 +404,11 @@ class _BudgetCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${formatMoney(spent)} ₸ жұмсалды',
+                    AppLocalizations.of(context)!.budgetSpent(formatMoney(spent)),
                     style: appBody(color: kTextSecondary, fontSize: 12),
                   ),
                   Text(
-                    isOver ? 'Асып кетті' : '${formatMoney(remaining)} ₸ қалды',
+                    isOver ? AppLocalizations.of(context)!.budgetExceeded : AppLocalizations.of(context)!.budgetRemaining(formatMoney(remaining)),
                     style: appBody(
                       color: isOver ? kClay : kTextSecondary,
                       fontSize: 12,

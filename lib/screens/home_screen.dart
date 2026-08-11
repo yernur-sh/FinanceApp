@@ -14,6 +14,23 @@ import 'notifications_screen.dart';
 import '../models/goal_model.dart';
 import '../models/budget_model.dart';
 import '../services/notification_service.dart';
+import '../l10n/app_localizations.dart';
+
+/// Базадағы хардкод немесе кілттік сөздерді тілге сай аударуға арналған extension
+extension TransactionCategoryLocalizer on String {
+  String getLocalizedCategory(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final val = toLowerCase().trim();
+
+    if (val == 'табыс' || val == 'доход' || val == 'income') {
+      return l10n.income;
+    }
+    if (val == 'шығын' || val == 'расход' || val == 'expense') {
+      return l10n.expense;
+    }
+    return this; // Басқа арнайы категория болса өзін қайтарады
+  }
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -59,14 +76,9 @@ class _HomeScreenState extends State<HomeScreen> {
         snap.docs.map((doc) => TransactionModel.fromDoc(doc)).toList());
   }
 
-  // ───────────────────────── Background watchers ─────────────────────────
-  // Бұл тыңдаушылар HomeScreen деңгейінде тұрады, сондықтан пайдаланушы
-  // Мақсаттар/Бюджет бетін ашпаса да іске қосылып тұрады.
-
   void _startBackgroundWatchers() {
     if (_userId == null) return;
 
-    // Мақсат толық жиналғанда бақылайды
     _goalsWatchSub = _firestore
         .collection('goals')
         .where('userId', isEqualTo: _userId)
@@ -84,14 +96,12 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
 
-    // Кез келген транзакция өзгергенде бюджеттерді қайта тексереді
     _transWatchSub = _firestore
         .collection('transactions')
         .where('userId', isEqualTo: _userId)
         .snapshots()
         .listen((_) => _checkBudgets());
 
-    // Бюджет қосылса/өзгерсе де қайта тексереді
     final now = DateTime.now();
     _budgetsWatchSub = _firestore
         .collection('budgets')
@@ -104,8 +114,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _checkBudgets() async {
     if (_userId == null) return;
-    final now = DateTime.now();
 
+    final now = DateTime.now();
     final budgetsSnap = await _firestore
         .collection('budgets')
         .where('userId', isEqualTo: _userId)
@@ -149,7 +159,6 @@ class _HomeScreenState extends State<HomeScreen> {
         .get();
 
     double total = 0.0;
-
     for (final doc in snapshot.docs) {
       final data = doc.data();
       final type = data['type']?.toString();
@@ -167,7 +176,6 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
     }
-
     return total;
   }
 
@@ -187,10 +195,12 @@ class _HomeScreenState extends State<HomeScreen> {
     await batch.commit();
   }
 
-  void _addTransaction({TransactionType initialType = TransactionType.expense}) {
+  void _addTransaction(
+      {TransactionType initialType = TransactionType.expense}) {
     final titleController = TextEditingController();
     final amountController = TextEditingController();
     final noteController = TextEditingController();
+
     TransactionType selectedType = initialType;
     String? selectedGoalId;
     String? selectedBudgetCategory;
@@ -207,6 +217,8 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            final l10n = AppLocalizations.of(context)!;
+
             return Padding(
               padding: EdgeInsets.only(
                 left: 20,
@@ -231,8 +243,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     Text(
-                      'Жаңа транзакция',
-                      style: appDisplay(fontSize: 19, fontWeight: FontWeight.w700),
+                      l10n.newTransaction,
+                      style: appDisplay(
+                          fontSize: 19, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 18),
                     SegmentedButton<TransactionType>(
@@ -245,16 +258,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         textStyle: GoogleFonts.inter(
                             fontWeight: FontWeight.w600, fontSize: 13.5),
                       ),
-                      segments: const [
+                      segments: [
                         ButtonSegment(
                           value: TransactionType.income,
-                          label: Text('Табыс'),
-                          icon: Icon(Icons.arrow_upward_rounded, size: 16),
+                          label: Text(l10n.income),
+                          icon: const Icon(Icons.arrow_upward_rounded,
+                              size: 16),
                         ),
                         ButtonSegment(
                           value: TransactionType.expense,
-                          label: Text('Шығын'),
-                          icon: Icon(Icons.arrow_downward_rounded, size: 16),
+                          label: Text(l10n.expense),
+                          icon: const Icon(Icons.arrow_downward_rounded,
+                              size: 16),
                         ),
                       ],
                       selected: {selectedType},
@@ -269,48 +284,46 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                     const SizedBox(height: 18),
-
                     if (selectedType == TransactionType.income) ...[
                       TextField(
                         controller: titleController,
                         style: appBody(fontSize: 14.5),
                         decoration: appFieldDecoration(
-                            'Табыс атауы (мыс. Жалақы, Премия)'),
+                            l10n.incomeTitleFieldHint),
                       ),
                       const SizedBox(height: 12),
                     ],
-
                     TextField(
                       controller: amountController,
                       keyboardType: TextInputType.number,
                       style: appBody(fontSize: 14.5),
-                      decoration: appFieldDecoration('Сомасы (₸)'),
+                      decoration:
+                      appFieldDecoration(l10n.amountFieldLabel),
                     ),
-
                     const SizedBox(height: 12),
                     TextField(
                       controller: noteController,
                       maxLines: 2,
                       style: appBody(fontSize: 14.5),
-                      decoration:
-                      appFieldDecoration('Комментарий', hint: 'Себеп-салдары'),
+                      decoration: appFieldDecoration(l10n.commentFieldLabel,
+                          hint: l10n.commentFieldHint),
                     ),
-
                     if (selectedType == TransactionType.expense) ...[
                       const SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Бюджет санатынан таңдаңыз',
+                            l10n.chooseBudgetCategory,
                             style: appBody(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w600,
                                 color: kTextPrimary),
                           ),
                           if (selectedGoalId != null)
-                            Text('Мақсат таңдалды',
-                                style: appBody(color: kTextMuted, fontSize: 11.5)),
+                            Text(l10n.goalSelected,
+                                style: appBody(
+                                    color: kTextMuted, fontSize: 11.5)),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -341,14 +354,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 );
                               }
+
                               final budgets = budgetSnapshot.data!.docs
                                   .map((d) => BudgetModel.fromDoc(d))
                                   .toList();
 
                               if (budgets.isEmpty) {
                                 return Text(
-                                  'Әзірге бюджет санаттары жоқ. Алдымен "Бюджет" бетінде санат құрыңыз',
-                                  style: appBody(color: kTextMuted, fontSize: 12.5),
+                                  l10n.noBudgetCategoriesYet,
+                                  style: appBody(
+                                      color: kTextMuted, fontSize: 12.5),
                                 );
                               }
 
@@ -361,7 +376,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   return ChoiceChip(
                                     label: Text(b.category),
                                     selected: selected,
-                                    backgroundColor: Colors.white.withOpacity(0.05),
+                                    backgroundColor:
+                                    Colors.white.withOpacity(0.05),
                                     selectedColor: kAccent,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
@@ -394,15 +410,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Мақсатқа қосу керек пе?',
+                            l10n.addToGoalQuestion,
                             style: appBody(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w600,
                                 color: kTextPrimary),
                           ),
                           if (selectedBudgetCategory != null)
-                            Text('Санат таңдалды',
-                                style: appBody(color: kTextMuted, fontSize: 11.5)),
+                            Text(l10n.categorySelected,
+                                style: appBody(
+                                    color: kTextMuted, fontSize: 11.5)),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -431,14 +448,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 );
                               }
+
                               final goals = goalSnapshot.data!.docs
                                   .map((d) => GoalModel.fromDoc(d))
                                   .toList();
 
                               if (goals.isEmpty) {
                                 return Text(
-                                  'Әзірге мақсаттарыңыз жоқ',
-                                  style: appBody(color: kTextMuted, fontSize: 12.5),
+                                  l10n.noGoalsYetShort,
+                                  style: appBody(
+                                      color: kTextMuted, fontSize: 12.5),
                                 );
                               }
 
@@ -450,13 +469,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                   return ChoiceChip(
                                     label: Text(g.title),
                                     selected: selected,
-                                    backgroundColor: Colors.white.withOpacity(0.05),
+                                    backgroundColor:
+                                    Colors.white.withOpacity(0.05),
                                     selectedColor: kAmber,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
                                       side: BorderSide(
-                                          color:
-                                          selected ? kAmber : kBorder),
+                                          color: selected ? kAmber : kBorder),
                                     ),
                                     labelStyle: appBody(
                                       color: selected
@@ -482,32 +501,35 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ],
-
                     const SizedBox(height: 22),
                     GradientButton(
-                      label: 'Қосу',
+                      label: l10n.addButton,
                       onPressed: () async {
                         final amount =
                         double.tryParse(amountController.text.trim());
                         if (amount == null || amount <= 0) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Соманы дұрыс енгізіңіз')),
+                            SnackBar(
+                                content: Text(l10n.enterValidAmount)),
                           );
                           return;
                         }
+
                         if (_userId == null) return;
 
-                        final isExpense = selectedType == TransactionType.expense;
+                        final isExpense =
+                            selectedType == TransactionType.expense;
                         final enteredTitle = titleController.text.trim();
                         final enteredNote = noteController.text.trim();
 
-                        String finalTitle = 'Шығын';
-                        String finalCategory = '-';
+                        // 🌐 Хардкод сөздердің орнына кілт сөз сақталады
+                        String finalTitle = isExpense ? 'Expense' : 'Income';
+                        String finalCategory = isExpense ? 'Expense' : 'Income';
 
                         if (!isExpense) {
-                          finalTitle = enteredTitle.isNotEmpty ? enteredTitle : 'Табыс';
-                          finalCategory = 'Табыс';
+                          if (enteredTitle.isNotEmpty) {
+                            finalTitle = enteredTitle;
+                          }
                         } else {
                           if (selectedGoalId != null) {
                             final goalDoc = await _firestore
@@ -515,15 +537,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 .doc(selectedGoalId)
                                 .get();
                             if (goalDoc.exists) {
-                              finalTitle = goalDoc.get('title') ?? 'Мақсат';
-                              finalCategory = goalDoc.get('title') ?? 'Мақсат';
+                              finalTitle = goalDoc.get('title') ?? 'Goal';
+                              finalCategory = goalDoc.get('title') ?? 'Goal';
                             }
                           } else if (selectedBudgetCategory != null) {
                             finalTitle = selectedBudgetCategory!;
                             finalCategory = selectedBudgetCategory!;
-                          } else {
-                            finalTitle = 'Шығын';
-                            finalCategory = 'Шығын';
                           }
                         }
 
@@ -546,8 +565,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         batch.set(transRef, newTransaction.toMap(_userId!));
 
                         if (selectedGoalId != null) {
-                          final goalRef =
-                          _firestore.collection('goals').doc(selectedGoalId);
+                          final goalRef = _firestore
+                              .collection('goals')
+                              .doc(selectedGoalId);
                           batch.update(goalRef, {
                             'currentAmount': FieldValue.increment(amount),
                           });
@@ -586,7 +606,6 @@ class _HomeScreenState extends State<HomeScreen> {
       extendBody: true,
       body: Stack(
         children: [
-          // Толық экранға созылған фон — төменгі шетке дейін, SafeArea-сыз
           const Positioned.fill(
             child: AppBackground(safeArea: false, child: SizedBox.expand()),
           ),
@@ -620,17 +639,22 @@ class _HomeScreenState extends State<HomeScreen> {
         }
         if (snapshot.hasError) {
           return Center(
-              child: Text('Қате: ${snapshot.error}',
+              child: Text(
+                  AppLocalizations.of(context)!
+                      .errorWithMessage('${snapshot.error}'),
                   style: appBody(color: kTextSecondary)));
         }
 
         final transactions = snapshot.data ?? [];
+
         final income = transactions
             .where((t) => t.type == TransactionType.income)
             .fold(0.0, (sum, t) => sum + t.amount);
+
         final expense = transactions
             .where((t) => t.type == TransactionType.expense)
             .fold(0.0, (sum, t) => sum + t.amount);
+
         final balance = income - expense;
 
         return ListView(
@@ -643,16 +667,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('ҚАРЖЫ ШОЛУ',
-                          style: appBody(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            color: kTextMuted,
-                            letterSpacing: 1.2,
-                          )),
                       const SizedBox(height: 4),
-                      Text('Жеке Қаржылар',
-                          style: appDisplay(fontSize: 25, fontWeight: FontWeight.w700)),
+                      Text(AppLocalizations.of(context)!.appTitle,
+                          style: appDisplay(
+                              fontSize: 25, fontWeight: FontWeight.w700)),
                     ],
                   ),
                 ),
@@ -671,21 +689,23 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Expanded(
                   child: _ActionButtonCard(
-                    title: 'Толықтыру',
+                    title: AppLocalizations.of(context)!.topUp,
                     icon: Icons.add_rounded,
                     accentColor: kGreen,
                     accentBg: kGreenBg,
-                    onTap: () => _addTransaction(initialType: TransactionType.income),
+                    onTap: () =>
+                        _addTransaction(initialType: TransactionType.income),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _ActionButtonCard(
-                    title: 'Жұмсау',
+                    title: AppLocalizations.of(context)!.spend,
                     icon: Icons.remove_rounded,
                     accentColor: kClay,
                     accentBg: kClayBg,
-                    onTap: () => _addTransaction(initialType: TransactionType.expense),
+                    onTap: () =>
+                        _addTransaction(initialType: TransactionType.expense),
                   ),
                 ),
               ],
@@ -694,12 +714,15 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Соңғы транзакциялар',
-                    style: appDisplay(fontSize: 18, fontWeight: FontWeight.w700)),
+                Text(AppLocalizations.of(context)!.recentTransactions,
+                    style: appDisplay(
+                        fontSize: 18, fontWeight: FontWeight.w700)),
                 if (transactions.isNotEmpty)
                   Text('${transactions.length}',
                       style: appBody(
-                          fontSize: 13, fontWeight: FontWeight.w600, color: kTextMuted)),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: kTextMuted)),
               ],
             ),
             const SizedBox(height: 14),
@@ -788,22 +811,42 @@ class _GlassBottomBar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelect;
 
-  const _GlassBottomBar({required this.selectedIndex, required this.onSelect});
+  const _GlassBottomBar(
+      {required this.selectedIndex, required this.onSelect});
 
-  static const _items = [
-    (icon: Icons.home_rounded, outline: Icons.home_outlined, label: 'Басты бет'),
-    (icon: Icons.pie_chart_rounded, outline: Icons.pie_chart_outline, label: 'Аналитика'),
-    (icon: Icons.flag_rounded, outline: Icons.flag_outlined, label: 'Мақсаттар'),
-    (
-    icon: Icons.account_balance_wallet_rounded,
-    outline: Icons.account_balance_wallet_outlined,
-    label: 'Бюджет'
-    ),
-    (icon: Icons.person_rounded, outline: Icons.person_outline, label: 'Профиль'),
-  ];
+  List<({IconData icon, IconData outline, String label})> _items(
+      BuildContext context) =>
+      [
+        (
+        icon: Icons.home_rounded,
+        outline: Icons.home_outlined,
+        label: AppLocalizations.of(context)!.navHome
+        ),
+        (
+        icon: Icons.pie_chart_rounded,
+        outline: Icons.pie_chart_outline,
+        label: AppLocalizations.of(context)!.analyticsTitle
+        ),
+        (
+        icon: Icons.flag_rounded,
+        outline: Icons.flag_outlined,
+        label: AppLocalizations.of(context)!.goalsTitle
+        ),
+        (
+        icon: Icons.account_balance_wallet_rounded,
+        outline: Icons.account_balance_wallet_outlined,
+        label: AppLocalizations.of(context)!.budgetTitle
+        ),
+        (
+        icon: Icons.person_rounded,
+        outline: Icons.person_outline,
+        label: AppLocalizations.of(context)!.profileTitle
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
+    final items = _items(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
       child: Container(
@@ -812,7 +855,8 @@ class _GlassBottomBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF19234A),
           borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: Colors.white.withOpacity(0.14), width: 1.2),
+          border:
+          Border.all(color: Colors.white.withOpacity(0.14), width: 1.2),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.55),
@@ -828,8 +872,8 @@ class _GlassBottomBar extends StatelessWidget {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(_items.length, (i) {
-            final item = _items[i];
+          children: List.generate(items.length, (i) {
+            final item = items[i];
             final selected = i == selectedIndex;
             return Expanded(
               child: GestureDetector(
@@ -838,7 +882,8 @@ class _GlassBottomBar extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeOut,
-                  margin: const EdgeInsets.symmetric(vertical: 9, horizontal: 3),
+                  margin:
+                  const EdgeInsets.symmetric(vertical: 9, horizontal: 3),
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   decoration: BoxDecoration(
                     gradient: selected ? kAccentGradient : null,
@@ -867,7 +912,9 @@ class _GlassBottomBar extends StatelessWidget {
                         item.label,
                         style: appBody(
                           fontSize: 10,
-                          fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                          fontWeight: selected
+                              ? FontWeight.w700
+                              : FontWeight.w600,
                           color: selected ? Colors.white : kTextMuted,
                         ),
                         maxLines: 1,
@@ -931,7 +978,7 @@ class _BalanceCard extends StatelessWidget {
                       color: kAmber, shape: BoxShape.circle),
                 ),
                 const SizedBox(width: 8),
-                Text('ЖАЛПЫ БАЛАНС',
+                Text(AppLocalizations.of(context)!.totalBalance,
                     style: appBody(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w700,
@@ -946,7 +993,8 @@ class _BalanceCard extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 '${formatMoney(balance)} ₸',
-                style: appDisplay(fontSize: 38, fontWeight: FontWeight.w700, height: 1),
+                style: appDisplay(
+                    fontSize: 38, fontWeight: FontWeight.w700, height: 1),
               ),
             ),
             const SizedBox(height: 22),
@@ -957,7 +1005,7 @@ class _BalanceCard extends StatelessWidget {
                 Expanded(
                   child: _MiniStat(
                     icon: Icons.arrow_upward_rounded,
-                    label: 'Түсім',
+                    label: AppLocalizations.of(context)!.incomeMini,
                     amount: '+${formatMoney(income)} ₸',
                     color: kGreen,
                   ),
@@ -969,7 +1017,7 @@ class _BalanceCard extends StatelessWidget {
                 Expanded(
                   child: _MiniStat(
                     icon: Icons.arrow_downward_rounded,
-                    label: 'Шығын',
+                    label: AppLocalizations.of(context)!.expense,
                     amount: '-${formatMoney(expense)} ₸',
                     color: kClay,
                     alignEnd: true,
@@ -1002,9 +1050,11 @@ class _MiniStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(left: alignEnd ? 16 : 0, right: alignEnd ? 0 : 16),
+      padding:
+      EdgeInsets.only(left: alignEnd ? 16 : 0, right: alignEnd ? 0 : 16),
       child: Column(
-        crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment:
+        alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -1015,7 +1065,9 @@ class _MiniStat extends StatelessWidget {
               ],
               Text(label,
                   style: appBody(
-                      fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white60)),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white60)),
               if (alignEnd) ...[
                 const SizedBox(width: 5),
                 Icon(icon, size: 13, color: color),
@@ -1025,7 +1077,8 @@ class _MiniStat extends StatelessWidget {
           const SizedBox(height: 5),
           Text(
             amount,
-            style: appBody(fontSize: 14.5, fontWeight: FontWeight.w700, color: color),
+            style: appBody(
+                fontSize: 14.5, fontWeight: FontWeight.w700, color: color),
           ),
         ],
       ),
@@ -1070,14 +1123,16 @@ class _ActionButtonCard extends StatelessWidget {
               Container(
                 width: 30,
                 height: 30,
-                decoration:
-                BoxDecoration(color: accentBg, borderRadius: BorderRadius.circular(9)),
+                decoration: BoxDecoration(
+                    color: accentBg, borderRadius: BorderRadius.circular(9)),
                 child: Icon(icon, color: accentColor, size: 18),
               ),
               const SizedBox(width: 10),
               Text(title,
                   style: appBody(
-                      fontWeight: FontWeight.w700, fontSize: 14.5, color: kTextPrimary)),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14.5,
+                      color: kTextPrimary)),
             ],
           ),
         ),
@@ -1100,15 +1155,20 @@ class _EmptyState extends StatelessWidget {
           Container(
             width: 52,
             height: 52,
-            decoration: const BoxDecoration(color: kAmberBg, shape: BoxShape.circle),
-            child: const Icon(Icons.receipt_long_rounded, color: kAmber, size: 24),
+            decoration:
+            const BoxDecoration(color: kAmberBg, shape: BoxShape.circle),
+            child:
+            const Icon(Icons.receipt_long_rounded, color: kAmber, size: 24),
           ),
           const SizedBox(height: 14),
-          Text('Транзакциялар жоқ',
-              style: appBody(fontWeight: FontWeight.w700, fontSize: 14.5, color: kTextPrimary)),
+          Text(AppLocalizations.of(context)!.noTransactions,
+              style: appBody(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14.5,
+                  color: kTextPrimary)),
           const SizedBox(height: 4),
           Text(
-            'Жаңа жазба қосу үшін жоғарыдағы\nбатырманы басыңыз',
+            AppLocalizations.of(context)!.addTransactionHint,
             textAlign: TextAlign.center,
             style: appBody(fontSize: 12.5, color: kTextMuted, height: 1.4),
           ),
@@ -1131,7 +1191,9 @@ class _TransactionTile extends StatelessWidget {
   });
 
   IconData get _icon {
-    if (transaction.type == TransactionType.income) return Icons.trending_up_rounded;
+    if (transaction.type == TransactionType.income) {
+      return Icons.trending_up_rounded;
+    }
     if (transaction.goalId != null) return Icons.flag_rounded;
     final c = transaction.category.toLowerCase();
     if (c.contains('тама') || c.contains('eda') || c.contains('food')) {
@@ -1140,8 +1202,12 @@ class _TransactionTile extends StatelessWidget {
     if (c.contains('көлік') || c.contains('авто') || c.contains('car')) {
       return Icons.directions_car_filled_rounded;
     }
-    if (c.contains('сая') || c.contains('travel')) return Icons.flight_takeoff_rounded;
-    if (c.contains('денсаул') || c.contains('health')) return Icons.favorite_rounded;
+    if (c.contains('сая') || c.contains('travel')) {
+      return Icons.flight_takeoff_rounded;
+    }
+    if (c.contains('денсаул') || c.contains('health')) {
+      return Icons.favorite_rounded;
+    }
     if (c.contains('білім') || c.contains('оқу') || c.contains('edu')) {
       return Icons.school_rounded;
     }
@@ -1152,11 +1218,19 @@ class _TransactionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isIncome = transaction.type == TransactionType.income;
     final isGoal = !isIncome && transaction.goalId != null;
+
     final color = isIncome ? kGreen : (isGoal ? kAmber : kClay);
     final bg = isIncome ? kGreenBg : (isGoal ? kAmberBg : kClayBg);
     final sign = isIncome ? '+' : '-';
-    final hasNote = transaction.note != null && transaction.note!.isNotEmpty;
-    final hasSubtitle = transaction.title != transaction.category;
+
+    final hasNote =
+        transaction.note != null && transaction.note!.isNotEmpty;
+
+    // 🌐 Тақырып pen Категорияны локализация бойынша аламыз:
+    final localizedTitle = transaction.title.getLocalizedCategory(context);
+    final localizedCategory = transaction.category.getLocalizedCategory(context);
+
+    final hasSubtitle = localizedTitle != localizedCategory;
 
     return Dismissible(
       key: ValueKey(transaction.id),
@@ -1170,7 +1244,8 @@ class _TransactionTile extends StatelessWidget {
           color: kClay,
           borderRadius: BorderRadius.circular(18),
         ),
-        child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
+        child: const Icon(Icons.delete_outline_rounded,
+            color: Colors.white, size: 22),
       ),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
@@ -1186,7 +1261,8 @@ class _TransactionTile extends StatelessWidget {
             Container(
               width: 42,
               height: 42,
-              decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(13)),
+              decoration:
+              BoxDecoration(color: bg, borderRadius: BorderRadius.circular(13)),
               child: Icon(_icon, color: color, size: 19),
             ),
             const SizedBox(width: 13),
@@ -1194,19 +1270,30 @@ class _TransactionTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(transaction.title,
-                      style: appBody(
-                          fontWeight: FontWeight.w700, fontSize: 14.5, color: kTextPrimary)),
+                  Text(
+                    localizedTitle, // 👈 Аудару функциясы қолданылды
+                    style: appBody(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14.5,
+                        color: kTextPrimary),
+                  ),
                   if (hasSubtitle) ...[
                     const SizedBox(height: 2),
-                    Text(transaction.category,
-                        style: appBody(
-                            fontSize: 12.5, color: kTextMuted, fontWeight: FontWeight.w500)),
+                    Text(
+                      localizedCategory, // 👈 Аудару функциясы қолданылды
+                      style: appBody(
+                          fontSize: 12.5,
+                          color: kTextMuted,
+                          fontWeight: FontWeight.w500),
+                    ),
                   ],
                   if (hasNote) ...[
                     const SizedBox(height: 4),
-                    Text(transaction.note!,
-                        style: appBody(fontSize: 12, color: kTextSecondary, height: 1.3)),
+                    Text(
+                      transaction.note!,
+                      style: appBody(
+                          fontSize: 12, color: kTextSecondary, height: 1.3),
+                    ),
                   ],
                 ],
               ),
@@ -1214,7 +1301,8 @@ class _TransactionTile extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               '$sign${formatMoney(transaction.amount)} ₸',
-              style: appBody(fontWeight: FontWeight.w700, fontSize: 14.5, color: color),
+              style: appBody(
+                  fontWeight: FontWeight.w700, fontSize: 14.5, color: color),
             ),
           ],
         ),
